@@ -3,6 +3,7 @@
     android:layout_width="match_parent"
     android:layout_height="55dp"
     android:background="?attr/selectableItemBackground"
+    android:descendantFocusability="blocksDescendants"
     android:orientation="horizontal"
     android:paddingBottom="6dp"
     android:paddingLeft="8dp"
@@ -18,12 +19,12 @@
 
     <LinearLayout
         android:id="@+id/linearlayout_song_info"
-        android:layout_width="227dp"
+        android:layout_width="220dp"
         android:layout_height="match_parent"
         android:layout_alignParentTop="true"
         android:layout_toRightOf="@+id/imageview_song"
         android:orientation="vertical"
-        android:paddingLeft="12dp">
+        android:paddingHorizontal="12dp">
 
         <TextView
             android:id="@+id/textview_song_title"
@@ -47,10 +48,11 @@
     </LinearLayout>
 
     <LinearLayout
-        android:layout_width="55dp"
+        android:layout_width="match_parent"
         android:layout_height="55dp"
         android:layout_alignParentTop="true"
         android:layout_toLeftOf="@+id/linearlayout_option"
+        android:layout_toRightOf="@+id/linearlayout_song_info"
         android:gravity="center"
         android:orientation="horizontal">
 

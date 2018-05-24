@@ -9,7 +9,6 @@ import android.widget.RelativeLayout;
 import android.widget.TextView;
 
 import com.example.tuanspk.soundlife.R;
-import com.example.tuanspk.soundlife.fragments.ListSongFragment;
 import com.example.tuanspk.soundlife.models.Song;
 
 import java.util.ArrayList;
@@ -26,6 +25,10 @@ public class SongAdapter extends BaseAdapter {
 //        this.layout = layout;
         this.songs = songs;
         this.songInflater = LayoutInflater.from(context);
+    }
+
+    public ArrayList<Song> getSongs() {
+        return songs;
     }
 
     @Override
@@ -101,7 +104,4 @@ public class SongAdapter extends BaseAdapter {
 //        return convertView;
     }
 
-    public ArrayList<Song> getSongs() {
-        return songs;
-    }
 }

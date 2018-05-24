@@ -4,7 +4,8 @@
     android:layout_width="wrap_content"
     android:layout_height="55dp"
     android:layout_gravity="top"
-    android:visibility="visible">
+    android:background="@color/colorSilver"
+    android:visibility="gone">
 
     <ImageView
         android:id="@+id/album_art_nowplayingcard"
@@ -33,7 +34,7 @@
             android:tag="tint_accent_color" />
 
         <TextView
-            android:id="@+id/title"
+            android:id="@+id/textview_song_title"
             style="@style/TextAppearance.AppCompat.Body1"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
@@ -44,7 +45,7 @@
             android:textSize="15sp" />
 
         <TextView
-            android:id="@+id/artist"
+            android:id="@+id/textview_song_artist"
             style="@style/TextAppearance.AppCompat.Widget.ActionMode.Subtitle"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"

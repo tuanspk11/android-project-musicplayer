@@ -5,11 +5,11 @@ import android.app.FragmentManager;
 import android.app.FragmentTransaction;
 import android.content.ComponentName;
 import android.content.ContentResolver;
-import android.content.Context;
 import android.content.Intent;
 import android.content.ServiceConnection;
 import android.content.pm.PackageManager;
 import android.database.Cursor;
+import android.content.Context;
 import android.net.Uri;
 import android.os.IBinder;
 import android.support.annotation.NonNull;
@@ -17,6 +17,7 @@ import android.support.v4.app.ActivityCompat;
 import android.support.v4.content.ContextCompat;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
+import android.util.Log;
 import android.widget.MediaController;
 import android.widget.Toast;
 
@@ -24,6 +25,8 @@ import com.example.tuanspk.soundlife.R;
 import com.example.tuanspk.soundlife.adapters.SongAdapter;
 import com.example.tuanspk.soundlife.fragments.ListSongFragment;
 import com.example.tuanspk.soundlife.fragments.MiniPlayerFragment;
+import com.example.tuanspk.soundlife.fragments.NowPlayingFragment;
+import com.example.tuanspk.soundlife.models.BaiHat;
 import com.example.tuanspk.soundlife.models.Song;
 import com.example.tuanspk.soundlife.services.MusicService;
 
@@ -34,12 +37,14 @@ import java.util.List;
 
 public class MainActivity extends AppCompatActivity implements MediaController.MediaPlayerControl {
 
-    private List<String> listPermissionsNeeded = new ArrayList<>();
+    private List<String> listPermissionsNeeded;
 
     FragmentManager fragmentManager;
     FragmentTransaction fragmentTransaction;
 
     ListSongFragment listSongFragment;
+    MiniPlayerFragment miniPlayerFragment;
+    NowPlayingFragment nowPlayingFragment;
 
     MusicService musicService;
     Intent serviceIntent;
@@ -71,12 +76,9 @@ public class MainActivity extends AppCompatActivity implements MediaController.M
         };
 
         if (checkAndRequestPermissions(lstPermissions)) {
-//            setAdapter();
-
             fragmentTransaction.add(R.id.fragment_main, new ListSongFragment());
+            fragmentTransaction.add(R.id.fragment_bottom, miniPlayerFragment);
             fragmentTransaction.commit();
-
-//            setController();
         } else {
             if (!listPermissionsNeeded.isEmpty()) {                                                 // truyen vao cac quyen chua duoc
                 ActivityCompat.requestPermissions(this,
@@ -100,15 +102,23 @@ public class MainActivity extends AppCompatActivity implements MediaController.M
 
     public SongAdapter getSongAdapter() {
         ArrayList<Song> songList = getSongList();
-
-        Collections.sort(songList, new Comparator<Song>() {
-            public int compare(Song a, Song b) {
-                return a.getTitle().compareTo(b.getTitle());
-            }
-        });
+        sortByTitle(songList);
 
         SongAdapter songAdt = new SongAdapter(this, songList);
         return songAdt;
+    }
+
+    public ArrayList<BaiHat> getSongList1() {
+        ArrayList<BaiHat> songList = new ArrayList<BaiHat>();
+        songList.add(new BaiHat(0, "Cho tôi xin một vé đi tuổi thơ", R.raw.cho_toi_xin_mot_ve_di_tuoi_tho, "Link Lee", 132000));
+        songList.add(new BaiHat(1, "Đời dạy tôi", R.raw.doi_day_toi, "Only C", 94000));
+        songList.add(new BaiHat(2, "Làm tình nguyện hết mình", R.raw.lam_tinh_nguyen_het_minh, "Ba Con Soi", 126000));
+        songList.add(new BaiHat(3, "Mình yêu nhau đi", R.raw.minh_yeu_nhau_di, "Bích Phương", 109000));
+        songList.add(new BaiHat(4, "Người âm phủ", R.raw.nguoi_am_phu, "I Dont Know", 56000));
+        songList.add(new BaiHat(5, "Nơi này có anh", R.raw.noi_nay_co_anh, "Sơn Tùng MTP", 155000));
+        songList.add(new BaiHat(6, "Yêu 5", R.raw.yeu_5, "I dont Know", 113000));
+
+        return songList;
     }
 
     public ArrayList<Song> getSongList() {
@@ -141,22 +151,29 @@ public class MainActivity extends AppCompatActivity implements MediaController.M
             while (musicCursor.moveToNext());
         }
 
-        sortByTitle(songList);
         return songList;
     }
 
     public void songPicked(int position) {
         listSongFragment = (ListSongFragment) getFragmentManager().findFragmentById(R.id.fragment_main);
 
-//        musicService.setSong(position);
-//        musicService.play();
-
-        MiniPlayerFragment miniPlayerFragment = new MiniPlayerFragment();
         miniPlayerFragment.setTxtSongTitle(listSongFragment.getSongs().get(position).getTitle());
         miniPlayerFragment.setTxtSongArtist(listSongFragment.getSongs().get(position).getArtist());
-        FragmentTransaction transaction = fragmentManager.beginTransaction();
-        transaction.add(R.id.fragment_bottom, miniPlayerFragment);
-        transaction.commit();
+        fragmentTransaction.replace(R.id.fragment_bottom, miniPlayerFragment);
+        miniPlayerFragment.show(miniPlayerFragment.getView());
+
+        musicService.setListSong(listSongFragment.getSongs());
+        musicService.setSong(position);
+        musicService.play();
+    }
+
+    public void songPlaying() {
+//        fragmentTransaction.replace(R.id.fragment_main, nowPlayingFragment);
+        miniPlayerFragment.hide(miniPlayerFragment.getView());
+
+        nowPlayingFragment = new NowPlayingFragment();
+        fragmentTransaction.replace(R.id.fragment_main, nowPlayingFragment);
+
     }
 
     public void sortByTitle(ArrayList<Song> listSong) {
@@ -172,8 +189,11 @@ public class MainActivity extends AppCompatActivity implements MediaController.M
     }
 
     private void init() {
+        listPermissionsNeeded = new ArrayList<>();
         fragmentManager = getFragmentManager();
         fragmentTransaction = fragmentManager.beginTransaction();
+
+        miniPlayerFragment = new MiniPlayerFragment();
     }
 
     private boolean checkAndRequestPermissions(String[] listPer) {
@@ -197,12 +217,9 @@ public class MainActivity extends AppCompatActivity implements MediaController.M
     public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
         if (requestCode == 1) {
             if (grantResults.length == 1 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
-//                setAdapter();
-
                 fragmentTransaction.add(R.id.fragment_main, new ListSongFragment());
+                fragmentTransaction.add(R.id.fragment_bottom, miniPlayerFragment);
                 fragmentTransaction.commit();
-
-//                setController();
             } else {
                 Toast.makeText(MainActivity.this, "Permision Write File is Denied", Toast.LENGTH_SHORT).show();
             }
