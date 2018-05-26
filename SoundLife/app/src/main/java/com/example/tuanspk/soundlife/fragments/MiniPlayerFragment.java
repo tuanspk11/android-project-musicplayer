@@ -9,7 +9,7 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ImageButton;
 import android.widget.ProgressBar;
-import android.widget.RelativeLayout;
+import android.widget.SeekBar;
 import android.widget.TextView;
 
 import com.example.tuanspk.soundlife.R;
@@ -22,12 +22,46 @@ public class MiniPlayerFragment extends Fragment {
     private TextView txtSongArtist;
     private ImageButton btnPlayPause;
 
+    private boolean isPause;
+
+    public ProgressBar getProgressBarSong() {
+        return progressBarSong;
+    }
+
+    public void setProgressBarSong(ProgressBar progressBarSong) {
+        this.progressBarSong = progressBarSong;
+    }
+
+    public String getTxtSongTitle() {
+        return txtSongTitle.getText().toString();
+    }
+
     public void setTxtSongTitle(String txtSongTitle) {
         this.txtSongTitle.setText(txtSongTitle);
     }
 
+    public String getTxtSongArtist() {
+        return txtSongArtist.getText().toString();
+    }
+
     public void setTxtSongArtist(String txtSongArtist) {
         this.txtSongArtist.setText(txtSongArtist);
+    }
+
+    public ImageButton getBtnPlayPause() {
+        return btnPlayPause;
+    }
+
+    public void setBtnPlayPause(ImageButton btnPlayPause) {
+        this.btnPlayPause = btnPlayPause;
+    }
+
+    public boolean isPause() {
+        return isPause;
+    }
+
+    public void setPause(boolean pause) {
+        isPause = pause;
     }
 
     @Nullable
@@ -37,6 +71,7 @@ public class MiniPlayerFragment extends Fragment {
 
         View view = inflater.inflate(R.layout.fragment_mini_player, container, false);
         declare(view);
+
         view.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
@@ -44,14 +79,34 @@ public class MiniPlayerFragment extends Fragment {
                 ((MainActivity) getActivity()).songPlaying();
             }
         });
+
+        btnPlayPause.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                if (isPause) {
+                    ((MainActivity) getActivity()).start();
+                    btnPlayPause.setBackgroundResource(R.drawable.ic_mini_pause);
+                    isPause = false;
+                } else {
+                    ((MainActivity) getActivity()).pause();
+                    btnPlayPause.setBackgroundResource(R.drawable.ic_mini_play);
+                    isPause = true;
+                }
+            }
+        });
+
         return view;
     }
 
     private void declare(View view) {
         txtSongTitle = (TextView) view.findViewById(R.id.textview_song_title);
         txtSongArtist = (TextView) view.findViewById(R.id.textview_song_artist);
-        progressBarSong = (ProgressBar) view.findViewById(R.id.song_progress_normal);
+        progressBarSong = (ProgressBar) view.findViewById(R.id.progressbar_song_duration);
         btnPlayPause = (ImageButton) view.findViewById(R.id.play_pause_button);
+    }
+
+    private void init() {
+        isPause = false;
     }
 
     public void show(View view) {

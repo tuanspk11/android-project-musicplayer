@@ -70,4 +70,12 @@ public class ListSongFragment extends Fragment {
         listViewMusic = view.findViewById(R.id.listview_songs);
     }
 
+    public void show(View view) {
+        view.setVisibility(view.VISIBLE);
+    }
+
+    public void hide(View view) {
+        view.setVisibility(view.GONE);
+    }
+
 }

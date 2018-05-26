@@ -19,9 +19,10 @@
 
     <LinearLayout
         android:id="@+id/linearlayout_song_info"
-        android:layout_width="220dp"
+        android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:layout_alignParentTop="true"
+        android:layout_toLeftOf="@+id/linearlayout_song_duration"
         android:layout_toRightOf="@+id/imageview_song"
         android:orientation="vertical"
         android:paddingHorizontal="12dp">
@@ -48,11 +49,11 @@
     </LinearLayout>
 
     <LinearLayout
-        android:layout_width="match_parent"
+        android:id="@+id/linearlayout_song_duration"
+        android:layout_width="50dp"
         android:layout_height="55dp"
         android:layout_alignParentTop="true"
         android:layout_toLeftOf="@+id/linearlayout_option"
-        android:layout_toRightOf="@+id/linearlayout_song_info"
         android:gravity="center"
         android:orientation="horizontal">
 

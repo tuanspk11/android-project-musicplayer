@@ -18,6 +18,7 @@ import android.util.Log;
 import com.example.tuanspk.soundlife.activities.MainActivity;
 import com.example.tuanspk.soundlife.models.Song;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Random;
 
@@ -39,10 +40,16 @@ public class MusicService extends Service implements
 
     private final IBinder musicBinder = new MusicBinder();
 
+    private IServiceCallbacks serviceCallbacks;
+
     public class MusicBinder extends Binder {
         public MusicService getService() {
             return MusicService.this;
         }
+    }
+
+    public void setServiceCallbacks(IServiceCallbacks callbacks) {
+        serviceCallbacks = callbacks;
     }
 
     @Override
@@ -108,6 +115,7 @@ public class MusicService extends Service implements
         }
 
         mediaPlayer.prepareAsync();
+//        mediaPlayer.start();
     }
 
     public void pause() {
@@ -127,19 +135,41 @@ public class MusicService extends Service implements
     }
 
     public void next() {
-        if (isShuffle) {
-            int newSong = position;
-            while (newSong == position) {
-                newSong = random.nextInt(songs.size());
-            }
-            position = newSong;
-        } else {
-            position++;
-            if (position >= songs.size())
-                position = 0;
+        switch (repeat) {
+            case 0:
+                if (isShuffle) {
+                    int newSong = position;
+                    while (newSong == position) {
+                        newSong = random.nextInt(songs.size());
+                    }
+                    position = newSong;
+                    play();
+                } else {
+                    position++;
+                    if (position >= songs.size()) {
+                        position = 0;
+                        pause();
+                    } else play();
+                }
+                break;
+            case 1:
+                if (isShuffle) {
+                    int newSong = position;
+                    while (newSong == position) {
+                        newSong = random.nextInt(songs.size());
+                    }
+                    position = newSong;
+                } else {
+                    position++;
+                    if (position >= songs.size())
+                        position = 0;
+                }
+                play();
+                break;
+            case 2:
+                play();
+                break;
         }
-
-        play();
     }
 
     public void setSong(int songIndex) {
@@ -155,7 +185,7 @@ public class MusicService extends Service implements
     }
 
     public int getPosition() {
-        return mediaPlayer.getCurrentPosition();
+        return position;
     }
 
     public void setPosition(int position) {
@@ -163,6 +193,8 @@ public class MusicService extends Service implements
     }
 
     public int getDuration() {
+        int i = mediaPlayer.getDuration();
+        Log.e("duration", String.valueOf(i));
         return mediaPlayer.getDuration();
     }
 
@@ -170,8 +202,8 @@ public class MusicService extends Service implements
         return isShuffle;
     }
 
-    public void setShuffle() {
-        isShuffle = !isShuffle;
+    public void setShuffle(boolean isShuffle) {
+        this.isShuffle = isShuffle;
     }
 
     public int getRepeat() {
@@ -186,11 +218,18 @@ public class MusicService extends Service implements
         mediaPlayer.seekTo(position);
     }
 
+    public int getCurrentPosition() {
+        return mediaPlayer.getCurrentPosition();
+    }
+
     @Override
     public void onCompletion(MediaPlayer mp) {
         if (mediaPlayer.getCurrentPosition() > 0) {
             mp.reset();
             next();
+
+            if (serviceCallbacks != null)
+                serviceCallbacks.onCompletion();
         }
     }
 

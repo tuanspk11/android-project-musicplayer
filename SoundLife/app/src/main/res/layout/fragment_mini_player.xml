@@ -24,13 +24,12 @@
         android:orientation="vertical">
 
         <ProgressBar
-            android:id="@+id/song_progress_normal"
+            android:id="@+id/progressbar_song_duration"
             style="@style/Widget.AppCompat.ProgressBar.Horizontal"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_gravity="top"
             android:maxHeight="5dp"
-            android:progress="30"
             android:tag="tint_accent_color" />
 
         <TextView
