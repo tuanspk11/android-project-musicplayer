@@ -7,6 +7,7 @@ import android.media.AudioManager;
 import android.media.MediaPlayer;
 import android.net.Uri;
 import android.os.Binder;
+import android.os.CountDownTimer;
 import android.os.IBinder;
 import android.os.PowerManager;
 import android.provider.MediaStore;
@@ -16,12 +17,12 @@ import android.util.Log;
 import com.example.tuanspk.soundlife.callbacks.IServiceCallbacks;
 import com.example.tuanspk.soundlife.models.Song;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Random;
 
 public class MusicService extends Service implements
         MediaPlayer.OnErrorListener,
-        MediaPlayer.OnPreparedListener,
         MediaPlayer.OnCompletionListener {
 
     private String songTitle = "";
@@ -89,7 +90,7 @@ public class MusicService extends Service implements
     private void initMusicPlayer() {
         mediaPlayer.setWakeMode(getApplicationContext(), PowerManager.PARTIAL_WAKE_LOCK);
         mediaPlayer.setAudioStreamType(AudioManager.STREAM_MUSIC);
-        mediaPlayer.setOnPreparedListener(this);
+//        mediaPlayer.setOnPreparedListener(this);
         mediaPlayer.setOnErrorListener(this);
         mediaPlayer.setOnCompletionListener(this);
     }
@@ -110,11 +111,17 @@ public class MusicService extends Service implements
                 MediaStore.Audio.Media.EXTERNAL_CONTENT_URI, currentSong);
         try {
             mediaPlayer.setDataSource(getApplicationContext(), trackUri);
+            mediaPlayer.prepare();
         } catch (Exception e) {
             Log.e("Music Service", "Error setting data source", e);
         }
 
-        mediaPlayer.prepareAsync();
+        mediaPlayer.setOnPreparedListener(new MediaPlayer.OnPreparedListener() {
+            @Override
+            public void onPrepared(MediaPlayer mp) {
+                mp.start();
+            }
+        });
         // chỗ này nếu chạy dòng lệnh trên xong đợi 1 2 giây mới chạy tiếp chương trình thì play nhạc được
         // còn nếu k đợi mà chạy luôn thì bị lỗi nhưng k phải crash
         // nếu k đợi 1 2 giây sau khi chạy lệnh prepareAsync thì mediaplayer tự nhảy xuống onComplettion
@@ -257,27 +264,27 @@ public class MusicService extends Service implements
         return false;
     }
 
-    @Override
-    public void onPrepared(MediaPlayer mp) {
-        // start playback
-        mp.start();
-
-//        Intent notIntent = new Intent(this, MainActivity.class);
-//        notIntent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
-//        PendingIntent pendingIntent = PendingIntent.getActivity(
-//                this, 0, notIntent, PendingIntent.FLAG_UPDATE_CURRENT);
+//    @Override
+//    public void onPrepared(MediaPlayer mp) {
+//        // start playback
+//        mp.start();
 //
-//        Notification.Builder builder = new Notification.Builder(this);
-//        builder.setContentIntent(pendingIntent)
-//                .setTicker(songTitle)
-//                .setOngoing(true)
-//                .setContentTitle("Playing")
-//                .setContentText(songTitle);
-//        Notification not = null;
-//        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.JELLY_BEAN) {
-//            not = builder.build();
-//        }
-//
-//        startForeground(NOTIFY_ID, not);
-    }
+////        Intent notIntent = new Intent(this, MainActivity.class);
+////        notIntent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
+////        PendingIntent pendingIntent = PendingIntent.getActivity(
+////                this, 0, notIntent, PendingIntent.FLAG_UPDATE_CURRENT);
+////
+////        Notification.Builder builder = new Notification.Builder(this);
+////        builder.setContentIntent(pendingIntent)
+////                .setTicker(songTitle)
+////                .setOngoing(true)
+////                .setContentTitle("Playing")
+////                .setContentText(songTitle);
+////        Notification not = null;
+////        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.JELLY_BEAN) {
+////            not = builder.build();
+////        }
+////
+////        startForeground(NOTIFY_ID, not);
+//    }
 }
