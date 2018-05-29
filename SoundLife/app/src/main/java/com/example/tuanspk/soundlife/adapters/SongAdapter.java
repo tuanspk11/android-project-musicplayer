@@ -15,14 +15,10 @@ import java.util.ArrayList;
 
 public class SongAdapter extends BaseAdapter {
 
-    //    Context context;
-//    int layout;
     private ArrayList<Song> songs;
     private LayoutInflater songInflater;
 
     public SongAdapter(Context context, ArrayList<Song> songs) {
-//        this.context = context;
-//        this.layout = layout;
         this.songs = songs;
         this.songInflater = LayoutInflater.from(context);
     }
@@ -44,6 +40,14 @@ public class SongAdapter extends BaseAdapter {
     @Override
     public long getItemId(int position) {
         return 0;
+    }
+
+    public Song getSongById(long id) {
+        for (int i = 0; i < songs.size(); i++)
+            if (songs.get(i).getId() == id)
+                return songs.get(i);
+
+        return null;
     }
 
     private class ViewHolder {

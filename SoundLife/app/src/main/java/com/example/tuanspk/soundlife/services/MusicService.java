@@ -1,7 +1,5 @@
 package com.example.tuanspk.soundlife.services;
 
-import android.app.Notification;
-import android.app.PendingIntent;
 import android.app.Service;
 import android.content.ContentUris;
 import android.content.Intent;
@@ -15,10 +13,9 @@ import android.provider.MediaStore;
 import android.support.annotation.Nullable;
 import android.util.Log;
 
-import com.example.tuanspk.soundlife.activities.MainActivity;
+import com.example.tuanspk.soundlife.callbacks.IServiceCallbacks;
 import com.example.tuanspk.soundlife.models.Song;
 
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Random;
 
@@ -63,6 +60,9 @@ public class MusicService extends Service implements
     @Override
     public void onDestroy() {
         stopForeground(true);
+
+        mediaPlayer.stop();
+        mediaPlayer.release();
     }
 
     @Nullable
@@ -73,8 +73,8 @@ public class MusicService extends Service implements
 
     @Override
     public boolean onUnbind(Intent intent) {
-        mediaPlayer.stop();
-        mediaPlayer.release();
+//        mediaPlayer.stop();
+//        mediaPlayer.release();
         return true;
     }
 
@@ -115,7 +115,13 @@ public class MusicService extends Service implements
         }
 
         mediaPlayer.prepareAsync();
+        // chỗ này nếu chạy dòng lệnh trên xong đợi 1 2 giây mới chạy tiếp chương trình thì play nhạc được
+        // còn nếu k đợi mà chạy luôn thì bị lỗi nhưng k phải crash
+        // nếu k đợi 1 2 giây sau khi chạy lệnh prepareAsync thì mediaplayer tự nhảy xuống onComplettion
+
+//        mediaPlayer = MediaPlayer.create(this, trackUri);
 //        mediaPlayer.start();
+//        onCompletion(mediaPlayer);
     }
 
     public void pause() {
@@ -222,10 +228,22 @@ public class MusicService extends Service implements
         return mediaPlayer.getCurrentPosition();
     }
 
+    public void setOnCompletion(MediaPlayer mediaPlayer) {
+        mediaPlayer.setOnCompletionListener(new MediaPlayer.OnCompletionListener() {
+            @Override
+            public void onCompletion(MediaPlayer mp) {
+                next();
+                if (serviceCallbacks != null) {
+                    serviceCallbacks.onCompletion();
+                }
+            }
+        });
+    }
+
     @Override
     public void onCompletion(MediaPlayer mp) {
         if (mediaPlayer.getCurrentPosition() > 0) {
-            mp.reset();
+//            mp.reset();
             next();
 
             if (serviceCallbacks != null)
@@ -244,22 +262,22 @@ public class MusicService extends Service implements
         // start playback
         mp.start();
 
-        Intent notIntent = new Intent(this, MainActivity.class);
-        notIntent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
-        PendingIntent pendingIntent = PendingIntent.getActivity(
-                this, 0, notIntent, PendingIntent.FLAG_UPDATE_CURRENT);
-
-        Notification.Builder builder = new Notification.Builder(this);
-        builder.setContentIntent(pendingIntent)
-                .setTicker(songTitle)
-                .setOngoing(true)
-                .setContentTitle("Playing")
-                .setContentText(songTitle);
-        Notification not = null;
-        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.JELLY_BEAN) {
-            not = builder.build();
-        }
-
-        startForeground(NOTIFY_ID, not);
+//        Intent notIntent = new Intent(this, MainActivity.class);
+//        notIntent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
+//        PendingIntent pendingIntent = PendingIntent.getActivity(
+//                this, 0, notIntent, PendingIntent.FLAG_UPDATE_CURRENT);
+//
+//        Notification.Builder builder = new Notification.Builder(this);
+//        builder.setContentIntent(pendingIntent)
+//                .setTicker(songTitle)
+//                .setOngoing(true)
+//                .setContentTitle("Playing")
+//                .setContentText(songTitle);
+//        Notification not = null;
+//        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.JELLY_BEAN) {
+//            not = builder.build();
+//        }
+//
+//        startForeground(NOTIFY_ID, not);
     }
 }

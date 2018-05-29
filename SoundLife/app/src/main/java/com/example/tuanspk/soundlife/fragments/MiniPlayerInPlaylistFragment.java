@@ -9,13 +9,13 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ImageButton;
 import android.widget.ProgressBar;
-import android.widget.SeekBar;
 import android.widget.TextView;
 
 import com.example.tuanspk.soundlife.R;
 import com.example.tuanspk.soundlife.activities.MainActivity;
+import com.example.tuanspk.soundlife.activities.PlaylistActivity;
 
-public class MiniPlayerFragment extends Fragment {
+public class MiniPlayerInPlaylistFragment extends Fragment {
 
     private ProgressBar progressBarSong;
     private TextView txtSongTitle;
@@ -77,7 +77,7 @@ public class MiniPlayerFragment extends Fragment {
             @Override
             public void onClick(View v) {
                 Log.e("on click", "mini controller");
-                ((MainActivity) getActivity()).songPlaying();
+                ((PlaylistActivity) getActivity()).songPlaying();
             }
         });
 
@@ -85,11 +85,11 @@ public class MiniPlayerFragment extends Fragment {
             @Override
             public void onClick(View v) {
                 if (isPause) {
-                    ((MainActivity) getActivity()).start();
+                    ((PlaylistActivity) getActivity()).start();
                     btnPlayPause.setBackgroundResource(R.drawable.ic_mini_pause);
                     isPause = false;
                 } else {
-                    ((MainActivity) getActivity()).pause();
+                    ((PlaylistActivity) getActivity()).pause();
                     btnPlayPause.setBackgroundResource(R.drawable.ic_mini_play);
                     isPause = true;
                 }

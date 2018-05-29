@@ -31,7 +31,7 @@ import com.example.tuanspk.soundlife.fragments.MiniPlayerFragment;
 import com.example.tuanspk.soundlife.fragments.NowPlayingFragment;
 import com.example.tuanspk.soundlife.models.BaiHat;
 import com.example.tuanspk.soundlife.models.Song;
-import com.example.tuanspk.soundlife.services.IServiceCallbacks;
+import com.example.tuanspk.soundlife.callbacks.IServiceCallbacks;
 import com.example.tuanspk.soundlife.services.MusicService;
 
 import java.text.SimpleDateFormat;
@@ -47,9 +47,9 @@ public class MainActivity extends AppCompatActivity
     private List<String> listPermissionsNeeded;
 
     private FragmentManager fragmentManager;
-    private FragmentTransaction fragmentTransaction;
-    private FragmentTransaction miniTransaction;
-    private FragmentTransaction playingTransaction;
+    private FragmentTransaction listSongTransaction;
+    private FragmentTransaction miniPlayerTransaction;
+    private FragmentTransaction nowPlayingTransaction;
 
     private ListSongFragment listSongFragment;
     private MiniPlayerFragment miniPlayerFragment;
@@ -67,7 +67,6 @@ public class MainActivity extends AppCompatActivity
     private boolean isShuffle;
     private int repeat;
 
-    private Menu menuMain;
     private MenuItem itemShuffle;
     private MenuItem itemRepeat;
 
@@ -81,6 +80,8 @@ public class MainActivity extends AppCompatActivity
             musicService = binder.getService();
 
             listSongFragment = (ListSongFragment) getFragmentManager().findFragmentById(R.id.fragment_main);
+            listSongFragment.show(listSongFragment.getView());
+
             musicService.setListSong(listSongFragment.getSongs());
             musicService.setServiceCallbacks(MainActivity.this);
 
@@ -92,6 +93,10 @@ public class MainActivity extends AppCompatActivity
             musicBound = false;
         }
     };
+
+    public MusicService getMusicService() {
+        return musicService;
+    }
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -108,6 +113,7 @@ public class MainActivity extends AppCompatActivity
         if (checkAndRequestPermissions(lstPermissions)) {
 
             initFragment();
+            listSongFragment.setListSongAdapter(getSongAdapter());
 
         } else {
             if (!listPermissionsNeeded.isEmpty()) {                                                 // truyen vao cac quyen chua duoc
@@ -139,6 +145,7 @@ public class MainActivity extends AppCompatActivity
             }
         }
 
+        listSongFragment.show(listSongFragment.getView());
     }
 
     @Override
@@ -146,6 +153,8 @@ public class MainActivity extends AppCompatActivity
         if (isPlayingFragmentShow) {
             nowPlayingFragment.hide(nowPlayingFragment.getView());
 
+            listSongFragment.show(listSongFragment.getView());
+            miniPlayerFragment.show(miniPlayerFragment.getView());
             getSupportActionBar().show();
             isPlayingFragmentShow = false;
         } else
@@ -156,8 +165,8 @@ public class MainActivity extends AppCompatActivity
         ArrayList<Song> songList = getSongList();
         sortByTitle(songList);
 
-        SongAdapter songAdt = new SongAdapter(this, songList);
-        return songAdt;
+        SongAdapter adapter = new SongAdapter(this, songList);
+        return adapter;
     }
 
     public ArrayList<BaiHat> getSongList1() {
@@ -237,6 +246,8 @@ public class MainActivity extends AppCompatActivity
         nowPlayingFragment.setRepeat(repeat);
         nowPlayingFragment.show(nowPlayingFragment.getView());
 
+        listSongFragment.hide(listSongFragment.getView());
+        miniPlayerFragment.hide(miniPlayerFragment.getView());
         getSupportActionBar().hide();
         isPlayingFragmentShow = true;
 
@@ -308,14 +319,14 @@ public class MainActivity extends AppCompatActivity
     public void setMiniFragment(int position) {
         miniPlayerFragment.setTxtSongTitle(musicService.getSongs().get(position).getTitle());
         miniPlayerFragment.setTxtSongArtist(musicService.getSongs().get(position).getArtist());
-        miniTransaction.replace(R.id.fragment_bottom, miniPlayerFragment);
+//        miniPlayerTransaction.replace(R.id.fragment_bottom, miniPlayerFragment);
     }
 
     public void setPlayingFragment() {
         nowPlayingFragment.setTxtSongTitle(musicService.getSongs().get(musicService.getPosition()).getTitle());
         nowPlayingFragment.setTxtSongArtist(musicService.getSongs().get(musicService.getPosition()).getArtist());
         nowPlayingFragment.setTxtSongDuration(simpleDateFormat.format(new Date((musicService.getDuration()))));
-        playingTransaction.replace(R.id.fragment_playing, nowPlayingFragment);
+//        nowPlayingTransaction.replace(R.id.fragment_playing, nowPlayingFragment);
     }
 
     private void setRunableProgressBar() {
@@ -411,20 +422,22 @@ public class MainActivity extends AppCompatActivity
     }
 
     private void declareItemInActionBar(Menu menu) {
-        itemShuffle = menuMain.findItem(R.id.item_shuffle);
-        itemRepeat = menuMain.findItem(R.id.item_repeat);
+        itemShuffle = menu.findItem(R.id.item_shuffle);
+        itemRepeat = menu.findItem(R.id.item_repeat);
     }
 
     private void init() {
         listPermissionsNeeded = new ArrayList<>();
 
         fragmentManager = getFragmentManager();
-        fragmentTransaction = fragmentManager.beginTransaction();
 
-        miniTransaction = fragmentManager.beginTransaction();
+        listSongTransaction = fragmentManager.beginTransaction();
+        listSongFragment = new ListSongFragment();
+
+        miniPlayerTransaction = fragmentManager.beginTransaction();
         miniPlayerFragment = new MiniPlayerFragment();
 
-        playingTransaction = fragmentManager.beginTransaction();
+        nowPlayingTransaction = fragmentManager.beginTransaction();
         nowPlayingFragment = new NowPlayingFragment();
 
         musicBound = false;
@@ -436,34 +449,45 @@ public class MainActivity extends AppCompatActivity
     }
 
     private void initFragment() {
-        fragmentTransaction.add(R.id.fragment_main, new ListSongFragment());
-        fragmentTransaction.commit();
+        listSongTransaction.add(R.id.fragment_main, listSongFragment);
+        listSongTransaction.commit();
 
-        miniTransaction.add(R.id.fragment_bottom, miniPlayerFragment);
-        miniTransaction.commit();
+        miniPlayerTransaction.add(R.id.fragment_bottom, miniPlayerFragment);
+        miniPlayerTransaction.commit();
 
-        playingTransaction.add(R.id.fragment_playing, nowPlayingFragment);
-        playingTransaction.commit();
+        nowPlayingTransaction.add(R.id.fragment_playing, nowPlayingFragment);
+        nowPlayingTransaction.commit();
     }
 
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
         getMenuInflater().inflate(R.menu.menu_main, menu);
-        menuMain = menu;
         declareItemInActionBar(menu);
         return super.onCreateOptionsMenu(menu);
     }
 
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
+        ArrayList<Song> songList;
         switch (item.getItemId()) {
             case R.id.item_playlist:
+                stop();
                 Intent intent = new Intent(MainActivity.this, PlaylistActivity.class);
                 startActivity(intent);
+                listSongFragment.hide(listSongFragment.getView());
+                miniPlayerFragment.hide(miniPlayerFragment.getView());
                 return true;
             case R.id.item_sort_title:
+                songList = listSongFragment.getSongs();
+                sortByTitle(songList);
+                listSongFragment.setListSongAdapter(new SongAdapter(this, songList));
+                listSongFragment.setListViewMusic();
                 return true;
             case R.id.item_sort_artist:
+                songList = listSongFragment.getSongs();
+                sortByArtist(songList);
+                listSongFragment.setListSongAdapter(new SongAdapter(this, songList));
+                listSongFragment.setListViewMusic();
                 return true;
             case R.id.item_shuffle:
                 if (isShuffle) {
@@ -537,6 +561,13 @@ public class MainActivity extends AppCompatActivity
 
         setDurationSeekBar();
         setPlayingFragment();
+    }
+
+    public void stop() {
+        if (musicService.isPlaying())
+            musicService.pause();
+        if (handler != null)
+            handler.removeCallbacks(runnable);
     }
 
     @Override
@@ -652,6 +683,7 @@ public class MainActivity extends AppCompatActivity
             if (grantResults.length == 1 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
 
                 initFragment();
+                listSongFragment.setListSongAdapter(getSongAdapter());
                 createService();
 
             } else {

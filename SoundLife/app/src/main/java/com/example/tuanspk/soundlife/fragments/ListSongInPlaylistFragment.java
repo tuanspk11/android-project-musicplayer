@@ -11,13 +11,13 @@ import android.widget.AdapterView;
 import android.widget.ListView;
 
 import com.example.tuanspk.soundlife.R;
-import com.example.tuanspk.soundlife.activities.MainActivity;
+import com.example.tuanspk.soundlife.activities.PlaylistActivity;
 import com.example.tuanspk.soundlife.adapters.SongAdapter;
 import com.example.tuanspk.soundlife.models.Song;
 
 import java.util.ArrayList;
 
-public class ListSongFragment extends Fragment {
+public class ListSongInPlaylistFragment extends Fragment {
 
     private ListView listViewMusic;
     private ArrayList<Song> songs;
@@ -46,16 +46,18 @@ public class ListSongFragment extends Fragment {
 
         View view = inflater.inflate(R.layout.fragment_songs, container, false);
         declare(view);
-//        listSongAdapter = ((MainActivity) getActivity()).getSongAdapter();
-        listViewMusic.setAdapter(listSongAdapter);
-        songs = listSongAdapter.getSongs();
-        listViewMusic.setOnItemClickListener(new AdapterView.OnItemClickListener() {
-            @Override
-            public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
-                Log.e("item click", "position: " + position);
-                ((MainActivity) getActivity()).songPicked(position);
-            }
-        });
+
+        if (listSongAdapter != null) {
+            songs = listSongAdapter.getSongs();
+            listViewMusic.setAdapter(listSongAdapter);
+            listViewMusic.setOnItemClickListener(new AdapterView.OnItemClickListener() {
+                @Override
+                public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
+                    Log.e("item click", "position: " + position);
+                    ((PlaylistActivity) getActivity()).songPicked(position);
+                }
+            });
+        }
 
         return view;
     }
