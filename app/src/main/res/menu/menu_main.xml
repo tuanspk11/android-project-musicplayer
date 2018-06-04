@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    tools:context=".activities.MainActivity">
+
+    <!--
+    id: để truy xuất kết nối code java
+    icon: icon của menu
+    showAsAction: trạng thái cho phép hiển thị trên actionbar
+    title: tiêu để dạng text
+    -->
+
+    <item
+        android:id="@+id/item_shuffle"
+        android:icon="@drawable/ic_item_not_shuffle"
+        android:title="Don't Shuffle"
+        app:showAsAction="ifRoom" />
+
+    <item
+        android:id="@+id/item_repeat"
+        android:icon="@drawable/ic_item_not_repeat"
+        android:title="Don't Repeat"
+        app:showAsAction="ifRoom" />
+
+    <item
+        android:id="@+id/item_playlist"
+        android:icon="@drawable/ic_item_playlist"
+        android:title="Playlist"
+        app:showAsAction="ifRoom" />
+
+    <item
+        android:id="@+id/item_sort_title"
+        android:title="Sort by Title" />
+
+    <item
+        android:id="@+id/item_sort_artist"
+        android:title="Sort by Artist" />
+
+</menu>
