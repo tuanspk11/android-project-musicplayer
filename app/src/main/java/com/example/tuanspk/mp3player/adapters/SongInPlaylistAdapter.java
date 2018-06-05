@@ -1,7 +1,6 @@
 package com.example.tuanspk.mp3player.adapters;
 
 import android.content.Context;
-import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.MenuItem;
 import android.view.View;
@@ -18,7 +17,7 @@ import com.example.tuanspk.mp3player.models.Song;
 
 import java.util.ArrayList;
 
-public class SongAdapter extends BaseAdapter {
+public class SongInPlaylistAdapter extends BaseAdapter {
 
     private Context context;
     private ArrayList<Song> songs;
@@ -30,7 +29,7 @@ public class SongAdapter extends BaseAdapter {
         songAdapterCallbacks = callbacks;
     }
 
-    public SongAdapter(Context context, ArrayList<Song> songs) {
+    public SongInPlaylistAdapter(Context context, ArrayList<Song> songs) {
         this.context = context;
         this.songs = songs;
         this.songInflater = LayoutInflater.from(context);
@@ -59,7 +58,6 @@ public class SongAdapter extends BaseAdapter {
         TextView title;
         TextView artist;
         TextView duration;
-        ImageView albumArt;
     }
 
     @Override
@@ -79,7 +77,7 @@ public class SongAdapter extends BaseAdapter {
             @Override
             public void onClick(View v) {
                 showPopupMenu(v, position);
-                Log.e("song position", String.valueOf(position));
+//                Log.e("song position", String.valueOf(position));
             }
         });
 
@@ -125,7 +123,7 @@ public class SongAdapter extends BaseAdapter {
 
     private void showPopupMenu(View view, final int position) {
         PopupMenu menu = new PopupMenu(context, view);
-        menu.getMenuInflater().inflate(R.menu.menu_item_song, menu.getMenu());
+        menu.getMenuInflater().inflate(R.menu.menu_item_song_in_playlist, menu.getMenu());
         menu.setOnMenuItemClickListener(new PopupMenu.OnMenuItemClickListener() {
             @Override
             public boolean onMenuItemClick(MenuItem item) {
@@ -134,8 +132,10 @@ public class SongAdapter extends BaseAdapter {
                         if (songAdapterCallbacks != null)
                             songAdapterCallbacks.addSongToPlaylist();
                         return true;
-                    case R.id.item_delete:
-                        Log.e("song", "delete");
+                    case R.id.item_remove:
+                        if (songAdapterCallbacks != null)
+                            songAdapterCallbacks.removeSongInPlaylist(
+                                    String.valueOf(songs.get(position).getId()));
                         return true;
                 }
                 return true;

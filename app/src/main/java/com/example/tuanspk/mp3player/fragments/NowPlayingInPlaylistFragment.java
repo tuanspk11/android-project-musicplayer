@@ -31,16 +31,8 @@ public class NowPlayingInPlaylistFragment extends Fragment implements View.OnCli
     private boolean isShuffle;
     private int repeat;
 
-    public String getTxtSongTitle() {
-        return txtSongTitle.getText().toString();
-    }
-
     public void setTxtSongTitle(String txtSongTitle) {
         this.txtSongTitle.setText(txtSongTitle);
-    }
-
-    public String getTxtSongArtist() {
-        return txtSongArtist.getText().toString();
     }
 
     public void setTxtSongArtist(String txtSongArtist) {
@@ -51,20 +43,8 @@ public class NowPlayingInPlaylistFragment extends Fragment implements View.OnCli
         return seekBar;
     }
 
-    public void setSeekBar(SeekBar seekBar) {
-        this.seekBar = seekBar;
-    }
-
-    public String getTxtSongDuration() {
-        return txtSongDuration.getText().toString();
-    }
-
     public void setTxtSongDuration(String txtSongDuration) {
         this.txtSongDuration.setText(txtSongDuration);
-    }
-
-    public String getTxtSongElapedTime() {
-        return txtSongElapedTime.getText().toString();
     }
 
     public void setTxtSongElapedTime(String txtSongElapedTime) {
@@ -75,44 +55,20 @@ public class NowPlayingInPlaylistFragment extends Fragment implements View.OnCli
         return btnPlayPause;
     }
 
-    public void setBtnPlayPause(ImageButton btnPlayPause) {
-        this.btnPlayPause = btnPlayPause;
-    }
-
     public ImageView getBtnShuffle() {
         return btnShuffle;
-    }
-
-    public void setBtnShuffle(ImageView btnShuffle) {
-        this.btnShuffle = btnShuffle;
     }
 
     public ImageView getBtnRepeat() {
         return btnRepeat;
     }
 
-    public void setBtnRepeat(ImageView btnRepeat) {
-        this.btnRepeat = btnRepeat;
-    }
-
-    public boolean isPause() {
-        return isPause;
-    }
-
     public void setPause(boolean pause) {
         isPause = pause;
     }
 
-    public boolean isShuffle() {
-        return isShuffle;
-    }
-
     public void setShuffle(boolean shuffle) {
         isShuffle = shuffle;
-    }
-
-    public int getRepeat() {
-        return repeat;
     }
 
     public void setRepeat(int repeat) {
@@ -209,4 +165,5 @@ public class NowPlayingInPlaylistFragment extends Fragment implements View.OnCli
         isPause = false;
         repeat = 0;
     }
+
 }

@@ -1,7 +1,6 @@
 package com.example.tuanspk.mp3player.adapters;
 
 import android.content.Context;
-import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.MenuItem;
 import android.view.View;
@@ -40,10 +39,6 @@ public class PlaylistAdapter extends BaseAdapter {
         return listPlaylist;
     }
 
-    public void setListPlaylist(ArrayList<Playlist> listPlaylist) {
-        this.listPlaylist = listPlaylist;
-    }
-
     @Override
     public int getCount() {
         return listPlaylist.size();
@@ -74,7 +69,7 @@ public class PlaylistAdapter extends BaseAdapter {
             @Override
             public void onClick(View v) {
                 showPopupMenu(v, position);
-                Log.e("playlist position", String.valueOf(position));
+//                Log.e("playlist position", String.valueOf(position));
             }
         });
 

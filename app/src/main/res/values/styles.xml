@@ -8,4 +8,6 @@
         <item name="colorAccent">@color/colorAccent</item>
     </style>
 
+    <style name="TextAppearance.Song.Lyrics" parent="@style/TextAppearance.AppCompat.Medium"></style>
+
 </resources>

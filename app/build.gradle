@@ -29,4 +29,10 @@ dependencies {
     implementation 'com.android.support:percent:27.1.1'
     implementation "com.android.support:design:27.1.1"
 
+    implementation 'com.squareup.okhttp:okhttp-urlconnection:2.3.0'
+    implementation 'com.squareup.okhttp:okhttp:2.3.0'
+    implementation 'com.squareup.retrofit:retrofit:1.9.0'
+
+    implementation 'com.nostra13.universalimageloader:universal-image-loader:1.9.4'
+
 }

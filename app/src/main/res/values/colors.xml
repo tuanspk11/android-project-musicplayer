@@ -8,5 +8,6 @@
     <color name="colorBlack">#000000</color>
     <color name="colorBlue">#040c99</color>
     <color name="colorSilver">#bcbcbc</color>
+    <color name="colorBackgroundPlaying">#2d2d2d</color>
 
 </resources>

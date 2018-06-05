@@ -15,7 +15,7 @@
         android:layout_height="55dp"
         android:layout_alignParentLeft="true"
         android:padding="1dp"
-        android:src="@drawable/ic_empty_music" />
+        android:src="@drawable/ic_music" />
 
     <LinearLayout
         android:id="@+id/linearlayout_song_info"

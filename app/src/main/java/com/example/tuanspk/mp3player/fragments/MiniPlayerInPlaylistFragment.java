@@ -3,7 +3,6 @@ package com.example.tuanspk.mp3player.fragments;
 import android.app.Fragment;
 import android.os.Bundle;
 import android.support.annotation.Nullable;
-import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -27,20 +26,8 @@ public class MiniPlayerInPlaylistFragment extends Fragment {
         return progressBarSong;
     }
 
-    public void setProgressBarSong(ProgressBar progressBarSong) {
-        this.progressBarSong = progressBarSong;
-    }
-
-    public String getTxtSongTitle() {
-        return txtSongTitle.getText().toString();
-    }
-
     public void setTxtSongTitle(String txtSongTitle) {
         this.txtSongTitle.setText(txtSongTitle);
-    }
-
-    public String getTxtSongArtist() {
-        return txtSongArtist.getText().toString();
     }
 
     public void setTxtSongArtist(String txtSongArtist) {
@@ -49,14 +36,6 @@ public class MiniPlayerInPlaylistFragment extends Fragment {
 
     public ImageButton getBtnPlayPause() {
         return btnPlayPause;
-    }
-
-    public void setBtnPlayPause(ImageButton btnPlayPause) {
-        this.btnPlayPause = btnPlayPause;
-    }
-
-    public boolean isPause() {
-        return isPause;
     }
 
     public void setPause(boolean pause) {
@@ -80,7 +59,7 @@ public class MiniPlayerInPlaylistFragment extends Fragment {
         view.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                Log.e("on click", "mini controller");
+//                Log.e("on click", "mini controller");
                 ((PlaylistActivity) getActivity()).songPlaying();
             }
         });

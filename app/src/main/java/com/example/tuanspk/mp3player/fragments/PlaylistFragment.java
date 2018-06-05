@@ -24,20 +24,8 @@ public class PlaylistFragment extends Fragment {
     private ArrayList<Playlist> listPlaylist;
     private PlaylistAdapter playlistAdapter;
 
-    public ArrayList<Playlist> getListPlaylist() {
-        return listPlaylist;
-    }
-
-    public void setSongs(ArrayList<Playlist> listPlaylist) {
-        this.listPlaylist = listPlaylist;
-    }
-
     public void setPlaylistAdapter(Context context, PlaylistAdapter playlistAdapter) {
         this.playlistAdapter = playlistAdapter;
-    }
-
-    public PlaylistAdapter getPlaylistAdapter() {
-        return playlistAdapter;
     }
 
     @Nullable
@@ -49,13 +37,6 @@ public class PlaylistFragment extends Fragment {
         declare(view);
 
         setListViewPlaylist();
-
-//        buttonPlaylistOption.setOnClickListener(new View.OnClickListener() {
-//            @Override
-//            public void onClick(View v) {
-//                Log.e("button playlist option", "click");
-//            }
-//        });
 
         return view;
     }
@@ -73,10 +54,6 @@ public class PlaylistFragment extends Fragment {
         });
 
         playlistAdapter.setPlaylistAdapterCallbacks((PlaylistActivity) getActivity());
-    }
-
-    private void init() {
-
     }
 
     private void declare(View view) {

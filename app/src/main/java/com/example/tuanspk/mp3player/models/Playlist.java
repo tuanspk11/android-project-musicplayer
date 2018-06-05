@@ -18,12 +18,4 @@ public class Playlist {
         this.name = name;
     }
 
-    public int[] getListSongId() {
-        return listSongId;
-    }
-
-    public void setListSongId(int[] listSongId) {
-        this.listSongId = listSongId;
-    }
-
 }

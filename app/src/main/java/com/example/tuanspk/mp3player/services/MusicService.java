@@ -11,7 +11,6 @@ import android.os.IBinder;
 import android.os.PowerManager;
 import android.provider.MediaStore;
 import android.support.annotation.Nullable;
-import android.util.Log;
 
 import com.example.tuanspk.mp3player.callbacks.IServiceCallbacks;
 import com.example.tuanspk.mp3player.models.Song;
@@ -104,7 +103,7 @@ public class MusicService extends Service implements
             mediaPlayer.setDataSource(getApplicationContext(), trackUri);
             mediaPlayer.prepare();
         } catch (Exception e) {
-            Log.e("Music Service", "Error setting data source", e);
+//            Log.e("Music Service", "Error setting data source", e);
         }
 
         mediaPlayer.setOnPreparedListener(new MediaPlayer.OnPreparedListener() {
@@ -113,18 +112,10 @@ public class MusicService extends Service implements
                 mp.start();
             }
         });
-        // chỗ này nếu chạy dòng lệnh trên xong đợi 1 2 giây mới chạy tiếp chương trình thì play nhạc được
-        // còn nếu k đợi mà chạy luôn thì bị lỗi nhưng k phải crash
-        // nếu k đợi 1 2 giây sau khi chạy lệnh prepareAsync thì mediaplayer tự nhảy xuống onComplettion
 
 //        mediaPlayer = MediaPlayer.create(this, trackUri);
 //        mediaPlayer.start();
 //        onCompletion(mediaPlayer);
-    }
-
-    public void stop() {
-        mediaPlayer.stop();
-        mediaPlayer.release();
     }
 
     public void pause() {
@@ -181,6 +172,10 @@ public class MusicService extends Service implements
         }
     }
 
+    public MediaPlayer getMediaPlayer() {
+        return mediaPlayer;
+    }
+
     public void setSong(int songIndex) {
         position = songIndex;
     }
@@ -203,20 +198,12 @@ public class MusicService extends Service implements
 
     public int getDuration() {
         int i = mediaPlayer.getDuration();
-        Log.e("duration", String.valueOf(i));
+//        Log.e("duration", String.valueOf(i));
         return mediaPlayer.getDuration();
-    }
-
-    public boolean isShuffle() {
-        return isShuffle;
     }
 
     public void setShuffle(boolean isShuffle) {
         this.isShuffle = isShuffle;
-    }
-
-    public int getRepeat() {
-        return repeat;
     }
 
     public void setRepeat(int repeat) {
@@ -229,18 +216,6 @@ public class MusicService extends Service implements
 
     public int getCurrentPosition() {
         return mediaPlayer.getCurrentPosition();
-    }
-
-    public void setOnCompletion(MediaPlayer mediaPlayer) {
-        mediaPlayer.setOnCompletionListener(new MediaPlayer.OnCompletionListener() {
-            @Override
-            public void onCompletion(MediaPlayer mp) {
-                next();
-                if (serviceCallbacks != null) {
-                    serviceCallbacks.onCompletion();
-                }
-            }
-        });
     }
 
     @Override
@@ -283,4 +258,5 @@ public class MusicService extends Service implements
 ////
 ////        startForeground(NOTIFY_ID, not);
 //    }
+
 }

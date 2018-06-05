@@ -1,8 +1,13 @@
 package com.example.tuanspk.mp3player.fragments;
 
 import android.app.Fragment;
+import android.content.CursorLoader;
+import android.database.Cursor;
+import android.net.Uri;
 import android.os.Bundle;
+import android.provider.MediaStore;
 import android.support.annotation.Nullable;
+import android.support.v4.content.ContextCompat;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -13,8 +18,14 @@ import android.widget.TextView;
 
 import com.example.tuanspk.mp3player.R;
 import com.example.tuanspk.mp3player.activities.MainActivity;
+import com.example.tuanspk.mp3player.visualizers.CircleBarVisualizer;
 
 public class NowPlayingFragment extends Fragment implements View.OnClickListener {
+
+    private long songID;
+    private String lyrics;
+
+    private CircleBarVisualizer circleBarVisualizer;
 
     private TextView txtSongTitle;
     private TextView txtSongArtist;
@@ -31,16 +42,8 @@ public class NowPlayingFragment extends Fragment implements View.OnClickListener
     private boolean isShuffle;
     private int repeat;
 
-    public String getTxtSongTitle() {
-        return txtSongTitle.getText().toString();
-    }
-
     public void setTxtSongTitle(String txtSongTitle) {
         this.txtSongTitle.setText(txtSongTitle);
-    }
-
-    public String getTxtSongArtist() {
-        return txtSongArtist.getText().toString();
     }
 
     public void setTxtSongArtist(String txtSongArtist) {
@@ -51,20 +54,8 @@ public class NowPlayingFragment extends Fragment implements View.OnClickListener
         return seekBar;
     }
 
-    public void setSeekBar(SeekBar seekBar) {
-        this.seekBar = seekBar;
-    }
-
-    public String getTxtSongDuration() {
-        return txtSongDuration.getText().toString();
-    }
-
     public void setTxtSongDuration(String txtSongDuration) {
         this.txtSongDuration.setText(txtSongDuration);
-    }
-
-    public String getTxtSongElapedTime() {
-        return txtSongElapedTime.getText().toString();
     }
 
     public void setTxtSongElapedTime(String txtSongElapedTime) {
@@ -75,28 +66,12 @@ public class NowPlayingFragment extends Fragment implements View.OnClickListener
         return btnPlayPause;
     }
 
-    public void setBtnPlayPause(ImageButton btnPlayPause) {
-        this.btnPlayPause = btnPlayPause;
-    }
-
     public ImageView getBtnShuffle() {
         return btnShuffle;
     }
 
-    public void setBtnShuffle(ImageView btnShuffle) {
-        this.btnShuffle = btnShuffle;
-    }
-
     public ImageView getBtnRepeat() {
         return btnRepeat;
-    }
-
-    public void setBtnRepeat(ImageView btnRepeat) {
-        this.btnRepeat = btnRepeat;
-    }
-
-    public boolean isPause() {
-        return isPause;
     }
 
     public void setPause(boolean pause) {
@@ -108,16 +83,8 @@ public class NowPlayingFragment extends Fragment implements View.OnClickListener
             btnPlayPause.setBackgroundResource(R.drawable.ic_pause);
     }
 
-    public boolean isShuffle() {
-        return isShuffle;
-    }
-
     public void setShuffle(boolean shuffle) {
         isShuffle = shuffle;
-    }
-
-    public int getRepeat() {
-        return repeat;
     }
 
     public void setRepeat(int repeat) {
@@ -189,6 +156,67 @@ public class NowPlayingFragment extends Fragment implements View.OnClickListener
         }
     }
 
+    public void loadLyrics() {
+//        String filename = getRealPathFromURI(Uri.parse(MediaStore.Audio.Media.EXTERNAL_CONTENT_URI + "/" + songID));
+//        if (filename != null && lyrics == null) {
+//            lyrics = LyricsExtractor.getLyrics(new File(filename));
+//        }
+//
+//        if (lyrics != null) {
+//            txtSongLyric.setText(lyrics);
+//        } else {
+//            String artist = txtSongArtist.getText().toString();
+//            if (artist != null) {
+//                int i = artist.lastIndexOf(" feat");
+//                if (i != -1) {
+//                    artist = artist.substring(0, i);
+//                }
+//
+//                LyricsLoader.getInstance(((MainActivity) getActivity()).getApplicationContext()).getLyrics(
+//                        artist, txtSongTitle.getText().toString(), new Callback<String>() {
+//                            @Override
+//                            public void success(String s, Response response) {
+//                                lyrics = s;
+//                                if (s.equals("Sorry, We don't have lyrics for this song yet.\n")) {
+//                                    txtSongLyric.setText(R.string.no_lyrics);
+//                                } else {
+//                                    txtSongLyric.setText(s);
+//                                    txtLyricPoweredby.setVisibility(View.VISIBLE);
+//                                }
+//                            }
+//
+//                            @Override
+//                            public void failure(RetrofitError error) {
+//                                txtSongLyric.setText(R.string.no_lyrics);
+//                            }
+//                        });
+//
+//            } else {
+//                txtSongLyric.setText(R.string.no_lyrics);
+//            }
+//        }
+    }
+
+//    private String getRealPathFromURI(Uri contentUri) {
+//        String[] proj = {MediaStore.Audio.Media.DATA};
+//        CursorLoader loader = new CursorLoader(((MainActivity) getActivity()).getApplicationContext(),
+//                contentUri, proj, null, null, null);
+//        Cursor cursor = loader.loadInBackground();
+//        int column_index = cursor.getColumnIndexOrThrow(MediaStore.Audio.Media.DATA);
+//        cursor.moveToFirst();
+//        String result = cursor.getString(column_index);
+//        cursor.close();
+//        return result;
+//    }
+
+    public void setCircleBarVisualizer(int audioSessionID) {
+        if (circleBarVisualizer.getVisualizer() == null) {
+            circleBarVisualizer.setColor(ContextCompat.getColor(
+                    ((MainActivity) getActivity()).getApplicationContext(), R.color.colorPink));
+            circleBarVisualizer.setPlayer(audioSessionID);
+        }
+    }
+
     public void show(View view) {
         view.setVisibility(view.VISIBLE);
     }
@@ -198,6 +226,8 @@ public class NowPlayingFragment extends Fragment implements View.OnClickListener
     }
 
     private void declare(View view) {
+        circleBarVisualizer = view.findViewById(R.id.visualizer);
+
         txtSongTitle = view.findViewById(R.id.textview_song_title);
         txtSongArtist = view.findViewById(R.id.textview_song_artist);
         seekBar = view.findViewById((R.id.seekbar_song_duration));
@@ -213,5 +243,7 @@ public class NowPlayingFragment extends Fragment implements View.OnClickListener
     private void init() {
         isPause = false;
         repeat = 0;
+        lyrics = null;
     }
+
 }

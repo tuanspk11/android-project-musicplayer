@@ -18,7 +18,6 @@ import android.support.annotation.NonNull;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.content.ContextCompat;
 import android.support.v7.app.AppCompatActivity;
-import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.widget.MediaController;
@@ -96,6 +95,10 @@ public class MainActivity extends AppCompatActivity
         }
     };
 
+//    public MusicService getMusicService() {
+//        return musicService;
+//    }
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -105,7 +108,9 @@ public class MainActivity extends AppCompatActivity
 
         String[] lstPermissions = new String[]{                                                     // mang chua cac quyen can xin phep
                 Manifest.permission.READ_EXTERNAL_STORAGE,                                          // quyen doc du lieu bo nho
-                Manifest.permission.WAKE_LOCK                                                       // quyen chay nen ung dung
+                Manifest.permission.WAKE_LOCK,                                                      // quyen chay nen ung dung
+                Manifest.permission.RECORD_AUDIO,                                                   // quyen thu am file audio
+                Manifest.permission.MODIFY_AUDIO_SETTINGS                                           // quyen chinh sua file audio
         };
 
         if (checkAndRequestPermissions(lstPermissions)) {
@@ -135,6 +140,13 @@ public class MainActivity extends AppCompatActivity
     }
 
     @Override
+    protected void onPause() {
+        super.onPause();
+
+        isShowPlaylist = true;
+    }
+
+    @Override
     protected void onDestroy() {
         super.onDestroy();
 
@@ -152,8 +164,6 @@ public class MainActivity extends AppCompatActivity
             nowPlayingFragment.hide(nowPlayingFragment.getView());
         } else {
             super.onBackPressed();
-
-            isShowPlaylist = true;
         }
     }
 
@@ -184,13 +194,16 @@ public class MainActivity extends AppCompatActivity
                     (android.provider.MediaStore.Audio.Media.ARTIST);
             int duration = musicCursor.getColumnIndex
                     (android.provider.MediaStore.Audio.Media.DURATION);
+            int albumIdColumn = musicCursor.getColumnIndex
+                    (android.provider.MediaStore.Audio.Media.ALBUM_ID);
             // add songs to list
             do {
                 long thisId = musicCursor.getLong(idColumn);
                 String thisTitle = musicCursor.getString(titleColumn);
                 String thisArtist = musicCursor.getString(artistColumn);
                 int thisDuration = musicCursor.getInt(duration);
-                songList.add(new Song(thisId, thisTitle, thisArtist, thisDuration));
+                long thisAlbumId = musicCursor.getLong(albumIdColumn);
+                songList.add(new Song(thisId, thisTitle, thisArtist, thisDuration, thisAlbumId));
             }
             while (musicCursor.moveToNext());
         }
@@ -227,6 +240,7 @@ public class MainActivity extends AppCompatActivity
                 break;
         }
         nowPlayingFragment.setRepeat(repeat);
+//        nowPlayingFragment.loadLyrics();
         nowPlayingFragment.show(nowPlayingFragment.getView());
 
         listSongFragment.hide(listSongFragment.getView());
@@ -310,6 +324,7 @@ public class MainActivity extends AppCompatActivity
         nowPlayingFragment.setTxtSongTitle(musicService.getSongs().get(musicService.getPosition()).getTitle());
         nowPlayingFragment.setTxtSongArtist(musicService.getSongs().get(musicService.getPosition()).getArtist());
         nowPlayingFragment.setTxtSongDuration(simpleDateFormat.format(new Date((musicService.getDuration()))));
+        nowPlayingFragment.setCircleBarVisualizer(musicService.getMediaPlayer().getAudioSessionId());
 //        nowPlayingTransaction.replace(R.id.fragment_playing, nowPlayingFragment);
     }
 
@@ -334,7 +349,7 @@ public class MainActivity extends AppCompatActivity
 
         miniPlayerFragment.getProgressBarSong().setMax(musicService.getDuration());
         int i = miniPlayerFragment.getProgressBarSong().getMax();
-        Log.e("progressbar max", String.valueOf(i));
+//        Log.e("progressbar max", String.valueOf(i));
         setProgressBar(0);
     }
 
@@ -351,14 +366,14 @@ public class MainActivity extends AppCompatActivity
                 if (!isShowPlaylist)
                     if (musicService.isPlaying()) {
                         int i = musicService.getCurrentPosition();
-                        Log.e("current position", String.valueOf(i));
-                        Log.e("max progressbar", String.valueOf(nowPlayingFragment.getSeekBar().getMax()));
-                        Log.e("duration", String.valueOf(musicService.getDuration()));
-                        Log.e("position", String.valueOf(musicService.getPosition()));
-                        Log.e("song id", String.valueOf(musicService.getSongs().get(musicService.getPosition()).getId()));
+//                        Log.e("current position", String.valueOf(i));
+//                        Log.e("max progressbar", String.valueOf(nowPlayingFragment.getSeekBar().getMax()));
+//                        Log.e("duration", String.valueOf(musicService.getDuration()));
+//                        Log.e("position", String.valueOf(musicService.getPosition()));
+//                        Log.e("song id", String.valueOf(musicService.getSongs().get(musicService.getPosition()).getId()));
                         setSeekBar(musicService.getCurrentPosition());
                     }
-                handler.postDelayed(this, 765);
+                handler.postDelayed(this, 1000);
             }
         };
 
@@ -370,7 +385,7 @@ public class MainActivity extends AppCompatActivity
 
         nowPlayingFragment.getSeekBar().setMax(musicService.getDuration());
         int i = nowPlayingFragment.getSeekBar().getMax();
-        Log.e("seekbar max", String.valueOf(i));
+//        Log.e("seekbar max", String.valueOf(i));
         setSeekBar(0);
     }
 
@@ -670,16 +685,22 @@ public class MainActivity extends AppCompatActivity
     @Override
     public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
         if (requestCode == 1) {
-            if (grantResults.length == 1 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
-
+            boolean isDenied = false;
+            for (int i = 0; i < grantResults.length; i++)
+//            if (grantResults.length == 1 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+                if (grantResults[i] != PackageManager.PERMISSION_GRANTED)
+                    isDenied = true;
+            if (!isDenied) {
                 initFragment();
                 listSongFragment.setListSongAdapter(getSongAdapter());
                 createService();
 
             } else {
-                Toast.makeText(MainActivity.this, "Permision Write File is Denied", Toast.LENGTH_SHORT).show();
+                Toast.makeText(MainActivity.this, "Permision is Denied", Toast.LENGTH_SHORT).show();
             }
-        } else {
+        } else
+
+        {
             super.onRequestPermissionsResult(requestCode, permissions, grantResults);
         }
     }

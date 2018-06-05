@@ -16,15 +16,32 @@
         <FrameLayout
             android:id="@+id/headerView"
             android:layout_width="match_parent"
+            android:background="@color/colorBackgroundPlaying"
             app:layout_heightPercent="65%">
 
-            <TextView
-                android:id="@+id/textview_song_lyric"
+            <!--<TextView-->
+            <!--android:id="@+id/textview_song_lyric"-->
+            <!--android:layout_width="wrap_content"-->
+            <!--android:layout_height="wrap_content"-->
+            <!--android:layout_margin="20dp"-->
+            <!--android:textAppearance="@style/TextAppearance.Song.Lyrics" />-->
+
+            <!--<TextView-->
+            <!--android:id="@+id/textview_lyrics_makeitpersonal"-->
+            <!--android:layout_width="match_parent"-->
+            <!--android:layout_height="match_parent"-->
+            <!--android:layout_margin="20dp"-->
+            <!--android:autoLink="web"-->
+            <!--android:background="@android:color/darker_gray"-->
+            <!--android:linksClickable="true"-->
+            <!--android:padding="16dp"-->
+            <!--android:textSize="20sp" />-->
+
+            <com.example.tuanspk.mp3player.visualizers.CircleBarVisualizer
+                android:id="@+id/visualizer"
                 android:layout_width="match_parent"
                 android:layout_height="match_parent"
-                android:background="@android:color/darker_gray"
-                android:padding="16dp"
-                android:textSize="20sp" />
+                android:gravity="center" />
 
         </FrameLayout>
 

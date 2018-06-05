@@ -33,10 +33,6 @@ public class SongInAddSongToPlaylistAdapter extends BaseAdapter {
         this.songInflater = LayoutInflater.from(context);
     }
 
-    public ArrayList<Song> getSongs() {
-        return songs;
-    }
-
     @Override
     public int getCount() {
         return songs.size();

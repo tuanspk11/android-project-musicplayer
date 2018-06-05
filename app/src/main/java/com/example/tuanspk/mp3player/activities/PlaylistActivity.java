@@ -29,16 +29,17 @@ import android.widget.Toast;
 
 import com.example.tuanspk.mp3player.R;
 import com.example.tuanspk.mp3player.adapters.PlaylistAdapter;
-import com.example.tuanspk.mp3player.adapters.SongAdapter;
+import com.example.tuanspk.mp3player.adapters.SongInPlaylistAdapter;
 import com.example.tuanspk.mp3player.adapters.SongInAddSongToPlaylistAdapter;
 import com.example.tuanspk.mp3player.callbacks.IPlaylistAdapterCallbacks;
 import com.example.tuanspk.mp3player.callbacks.IServiceCallbacks;
+import com.example.tuanspk.mp3player.callbacks.ISongAdapterCallbacks;
 import com.example.tuanspk.mp3player.callbacks.ISongInAddSongToPlaylistAdapterCallbacks;
 import com.example.tuanspk.mp3player.fragments.ListSongInPlaylistFragment;
 import com.example.tuanspk.mp3player.fragments.MiniPlayerInPlaylistFragment;
 import com.example.tuanspk.mp3player.fragments.NowPlayingInPlaylistFragment;
 import com.example.tuanspk.mp3player.fragments.PlaylistFragment;
-import com.example.tuanspk.mp3player.helpers.IOInternalStorage;
+import com.example.tuanspk.mp3player.utils.IOInternalStorage;
 import com.example.tuanspk.mp3player.models.Playlist;
 import com.example.tuanspk.mp3player.models.Song;
 import com.example.tuanspk.mp3player.services.MusicService;
@@ -51,8 +52,9 @@ import java.util.Comparator;
 import java.util.Date;
 
 public class PlaylistActivity extends AppCompatActivity
-        implements MediaController.MediaPlayerControl,
-        IServiceCallbacks, IPlaylistAdapterCallbacks, ISongInAddSongToPlaylistAdapterCallbacks {
+        implements MediaController.MediaPlayerControl, IServiceCallbacks, IPlaylistAdapterCallbacks,
+        ISongInAddSongToPlaylistAdapterCallbacks,
+        ISongAdapterCallbacks {
 
     private FragmentManager fragmentManager;
     private FragmentTransaction playlistTransaction;
@@ -157,13 +159,13 @@ public class PlaylistActivity extends AppCompatActivity
             case R.id.item_sort_title:
                 songList = listSongFragment.getSongs();
                 sortByTitle(songList);
-                listSongFragment.setListSongAdapter(new SongAdapter(this, songList));
+                listSongFragment.setListSongAdapter(new SongInPlaylistAdapter(this, songList));
                 listSongFragment.setListViewMusic();
                 return true;
             case R.id.item_sort_artist:
                 songList = listSongFragment.getSongs();
                 sortByArtist(songList);
-                listSongFragment.setListSongAdapter(new SongAdapter(this, songList));
+                listSongFragment.setListSongAdapter(new SongInPlaylistAdapter(this, songList));
                 listSongFragment.setListViewMusic();
                 return true;
         }
@@ -193,11 +195,11 @@ public class PlaylistActivity extends AppCompatActivity
         return listPlaylist;
     }
 
-    public SongAdapter getSongAdapter(ArrayList<Song> listSong) {
+    public SongInPlaylistAdapter getSongAdapter(ArrayList<Song> listSong) {
         ArrayList<Song> list = listSong;
         sortByTitle(list);
 
-        SongAdapter adapter = new SongAdapter(this, list);
+        SongInPlaylistAdapter adapter = new SongInPlaylistAdapter(this, list);
         return adapter;
     }
 
@@ -237,13 +239,16 @@ public class PlaylistActivity extends AppCompatActivity
                     (android.provider.MediaStore.Audio.Media.ARTIST);
             int duration = musicCursor.getColumnIndex
                     (android.provider.MediaStore.Audio.Media.DURATION);
+            int albumIdColumn = musicCursor.getColumnIndex
+                    (android.provider.MediaStore.Audio.Media.ALBUM_ID);
             // add songs to list
             do {
                 long thisId = musicCursor.getLong(idColumn);
                 String thisTitle = musicCursor.getString(titleColumn);
                 String thisArtist = musicCursor.getString(artistColumn);
                 int thisDuration = musicCursor.getInt(duration);
-                songList.add(new Song(thisId, thisTitle, thisArtist, thisDuration));
+                long thisAlbumId = musicCursor.getLong(albumIdColumn);
+                songList.add(new Song(thisId, thisTitle, thisArtist, thisDuration, thisAlbumId));
             }
             while (musicCursor.moveToNext());
         }
@@ -267,6 +272,7 @@ public class PlaylistActivity extends AppCompatActivity
             super.onBackPressed();
 
             stop();
+            unbindService(serviceConnection);
         }
     }
 
@@ -498,7 +504,7 @@ public class PlaylistActivity extends AppCompatActivity
         dialog.show();
     }
 
-    public void setListSongFragment(SongAdapter adapter) {
+    public void setListSongFragment(SongInPlaylistAdapter adapter) {
         listSongFragment.setListSongAdapter(adapter);
         listSongFragment.setListViewMusic();
     }
@@ -819,7 +825,7 @@ public class PlaylistActivity extends AppCompatActivity
         if (buttonOKEnable > 0)
             buttonOKInAddSongsToPlaylist.setEnabled(true);
         else buttonOKInAddSongsToPlaylist.setEnabled(false);
-        showToastLengthLong(this, "checked");
+//        showToastLengthLong(this, "checked");
         Log.e("id", Id);
         Log.e("isChecked", String.valueOf(isChecked));
 
@@ -835,5 +841,37 @@ public class PlaylistActivity extends AppCompatActivity
                     listSIdLength--;
                 }
         }
+    }
+
+    @Override
+    public void addSongToPlaylist() {
+
+    }
+
+    @Override
+    public void removeSongInPlaylist(String songID) {
+        if (musicService.isPlaying())
+            showToastLengthShort(this, "Music service is playing, please pause to music!!");
+        else
+            deleteSong(songID);
+    }
+
+    private void deleteSong(String songID) {
+        File file = IOData.readInternal(getApplicationContext(), filePath, plName + ".txt");
+        String[] listSongID = IOData.readFileInInternal(file, filePath, plName + ".txt");
+        String[] list = new String[listSongID.length - 1];
+        int i = 0;
+        while (!listSongID[i].toString().trim().equals(songID.toString().trim())) {
+            list[i] = listSongID[i];
+            i++;
+        }
+        for (int j = i; j < list.length; j++)
+            list[j] = listSongID[j + 1];
+
+        IOData.writeFileInInternal(file, list);
+
+        setListSongFragment(getSongAdapter(getSongsInPlaylist(plName)));
+        miniPlayerFragment.hide(miniPlayerFragment.getView());
+        musicService.setListSong(getSongsInPlaylist(plName));
     }
 }

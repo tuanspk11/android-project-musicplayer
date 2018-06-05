@@ -1,3 +1,7 @@
 <resources>
     <string name="app_name">MP3Player</string>
+
+    <string name="lyrics_loading">Loading...</string>
+    <string name="no_lyrics">No lyrics found.</string>
+
 </resources>
