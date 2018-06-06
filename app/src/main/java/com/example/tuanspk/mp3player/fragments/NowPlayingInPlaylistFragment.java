@@ -151,6 +151,8 @@ public class NowPlayingInPlaylistFragment extends Fragment implements View.OnCli
     }
 
     public void setCircleBarVisualizer(int audioSessionID) {
+        if (circleBarVisualizer.getVisualizer() != null)
+            circleBarVisualizer.release();
         circleBarVisualizer.setColor(ContextCompat.getColor(
                 ((PlaylistActivity) getActivity()).getApplicationContext(), R.color.colorPink));
         circleBarVisualizer.setPlayer(audioSessionID);

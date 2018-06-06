@@ -19,12 +19,12 @@ public class IOInternalStorage extends Activity {
         File internalFile;
         ContextWrapper contextWrapper = new ContextWrapper(context);
         File directory = contextWrapper.getDir(filePath, Context.MODE_PRIVATE);
-        internalFile = new File(directory, fileName);
+        internalFile = new File(directory, fileName + ".txt");
 
         return internalFile;
     }
 
-    public String[] readFileInInternal(File file, String filePath, String fileName) {
+    public String[] readFileInInternal(File file) {
         String[] arrayList = null;
 
 //        try {

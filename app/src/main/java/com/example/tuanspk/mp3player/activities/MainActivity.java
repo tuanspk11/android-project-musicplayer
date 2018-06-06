@@ -31,11 +31,11 @@ import com.example.tuanspk.mp3player.fragments.MiniPlayerFragment;
 import com.example.tuanspk.mp3player.fragments.NowPlayingFragment;
 import com.example.tuanspk.mp3player.models.Song;
 import com.example.tuanspk.mp3player.services.MusicService;
+import com.example.tuanspk.mp3player.utils.ShowToasFunctions;
+import com.example.tuanspk.mp3player.utils.SortFunctions;
 
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Comparator;
 import java.util.Date;
 import java.util.List;
 
@@ -69,9 +69,13 @@ public class MainActivity extends AppCompatActivity
     private MenuItem itemShuffle;
     private MenuItem itemRepeat;
 
-    private boolean isShowPlaylist;
+    private boolean isShowHome;
+    private boolean isShowMain;
 
-    private SimpleDateFormat simpleDateFormat = new SimpleDateFormat("mm:ss");
+    private SimpleDateFormat simpleDateFormat;
+
+    private SortFunctions sortFunctions;
+    private ShowToasFunctions showToasFunctions;
 
     private ServiceConnection serviceConnection = new ServiceConnection() {
         @Override
@@ -95,10 +99,6 @@ public class MainActivity extends AppCompatActivity
         }
     };
 
-//    public MusicService getMusicService() {
-//        return musicService;
-//    }
-
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -116,7 +116,7 @@ public class MainActivity extends AppCompatActivity
         if (checkAndRequestPermissions(lstPermissions)) {
 
             initFragment();
-            listSongFragment.setListSongAdapter(getSongAdapter());
+            listSongFragment.setListSongAdapter(getSongAdapter(getSongsInExternalStorage()));
             createService();
 
         } else {
@@ -132,18 +132,25 @@ public class MainActivity extends AppCompatActivity
     protected void onRestart() {
         super.onRestart();
 
-        isShowPlaylist = false;
+        isShowHome = false;
+        isShowMain = true;
 
         listSongFragment = (ListSongFragment) getFragmentManager().findFragmentById(R.id.fragment_main);
         listSongFragment.show(listSongFragment.getView());
         musicService.setListSong(listSongFragment.getSongs());
+
+        musicService.setServiceCallbacks(MainActivity.this);
+        musicBound = true;
     }
 
     @Override
     protected void onPause() {
         super.onPause();
 
-        isShowPlaylist = true;
+        nowPlayingFragment = (NowPlayingFragment) getFragmentManager().findFragmentById(R.id.fragment_playing);
+
+        isShowHome = true;
+        isShowMain = false;
     }
 
     @Override
@@ -162,20 +169,100 @@ public class MainActivity extends AppCompatActivity
             isPlayingFragmentShow = false;
 
             nowPlayingFragment.hide(nowPlayingFragment.getView());
-        } else {
+        } else
             super.onBackPressed();
-        }
     }
 
-    public SongAdapter getSongAdapter() {
-        ArrayList<Song> songList = getSongList();
-        sortByTitle(songList);
+    @Override
+    public boolean onCreateOptionsMenu(Menu menu) {
+        getMenuInflater().inflate(R.menu.menu_main, menu);
+        getSupportActionBar().setTitle("All songs");
+        declareItemInActionBar(menu);
+        return super.onCreateOptionsMenu(menu);
+    }
 
-        SongAdapter adapter = new SongAdapter(this, songList);
+    @Override
+    public boolean onOptionsItemSelected(MenuItem item) {
+        ArrayList<Song> songList;
+        switch (item.getItemId()) {
+            case R.id.item_playlist:
+                stop();
+                Intent intent = new Intent(MainActivity.this, PlaylistActivity.class);
+                startActivity(intent);
+                listSongFragment.hide(listSongFragment.getView());
+                miniPlayerFragment.hide(miniPlayerFragment.getView());
+                return true;
+            case R.id.item_sort_title:
+                songList = listSongFragment.getSongs();
+                sortFunctions.sortByTitle(songList);
+                listSongFragment.setListSongAdapter(new SongAdapter(this, songList));
+                listSongFragment.setListViewMusic();
+                return true;
+            case R.id.item_sort_artist:
+                songList = listSongFragment.getSongs();
+                sortFunctions.sortByArtist(songList);
+                listSongFragment.setListSongAdapter(new SongAdapter(this, songList));
+                listSongFragment.setListViewMusic();
+                return true;
+            case R.id.item_shuffle:
+                if (isShuffle) {
+                    itemShuffle.setTitle("Don't Shuffle");
+                    itemShuffle.setIcon(R.drawable.ic_item_not_shuffle);
+                    showToasFunctions.showToastLengthShort(this, "Don't Shuffle");
+                    isShuffle = false;
+                    musicService.setShuffle(isShuffle);
+                } else {
+                    itemShuffle.setTitle("Shuffle");
+                    itemShuffle.setIcon(R.drawable.ic_shuffle);
+                    showToasFunctions.showToastLengthShort(this, "Shuffle");
+                    isShuffle = true;
+                    musicService.setShuffle(isShuffle);
+                }
+                return true;
+            case R.id.item_repeat:
+                switch (repeat) {
+                    case 0:
+                        itemRepeat.setTitle("Repeat All");
+                        itemRepeat.setIcon(R.drawable.ic_repeat_all);
+                        showToasFunctions.showToastLengthShort(this, "Repeat All");
+                        repeat = 1;
+                        musicService.setRepeat(repeat);
+                        break;
+                    case 1:
+                        itemRepeat.setTitle("Repeat One");
+                        itemRepeat.setIcon(R.drawable.ic_repeat_one);
+                        showToasFunctions.showToastLengthShort(this, "Repeat One");
+                        repeat = 2;
+                        musicService.setRepeat(repeat);
+                        break;
+                    case 2:
+                        itemRepeat.setTitle("Don't Repeat");
+                        itemRepeat.setIcon(R.drawable.ic_item_not_repeat);
+                        showToasFunctions.showToastLengthShort(this, "Don't Repeat");
+                        repeat = 0;
+                        musicService.setRepeat(repeat);
+                        break;
+                }
+                return true;
+        }
+
+        return super.onOptionsItemSelected(item);
+    }
+
+    private void declareItemInActionBar(Menu menu) {
+        itemShuffle = menu.findItem(R.id.item_shuffle);
+        itemRepeat = menu.findItem(R.id.item_repeat);
+    }
+
+    public SongAdapter getSongAdapter(ArrayList<Song> listSong) {
+        ArrayList<Song> list = listSong;
+        sortFunctions.sortByTitle(list);
+
+        SongAdapter adapter = new SongAdapter(this, list);
         return adapter;
     }
 
-    public ArrayList<Song> getSongList() {
+    public ArrayList<Song> getSongsInExternalStorage() {
 
         ArrayList<Song> songList = new ArrayList<Song>();
 
@@ -264,55 +351,6 @@ public class MainActivity extends AppCompatActivity
 //        transaction.replace(R.id.fragment_playing, nowPlayingFragment);
     }
 
-    public void setShuffleClicked() {
-        nowPlayingFragment = (NowPlayingFragment) getFragmentManager().findFragmentById(R.id.fragment_playing);
-
-        if (isShuffle) {
-            itemShuffle.setTitle("Don't Shuffle");
-            showToastLengthShort(this, "Don't Shuffle");
-            isShuffle = false;
-            nowPlayingFragment.setShuffle(isShuffle);
-            nowPlayingFragment.getBtnShuffle().setBackgroundResource(R.drawable.ic_not_shuffle);
-            musicService.setShuffle(isShuffle);
-        } else {
-            itemShuffle.setTitle("Shuffle");
-            showToastLengthShort(this, "Shuffle");
-            isShuffle = true;
-            nowPlayingFragment.setShuffle(isShuffle);
-            nowPlayingFragment.getBtnShuffle().setBackgroundResource(R.drawable.ic_shuffle);
-            musicService.setShuffle(isShuffle);
-        }
-    }
-
-    public void setRepeatClicked() {
-        switch (repeat) {
-            case 0:
-                itemRepeat.setTitle("Repeat All");
-                showToastLengthShort(this, "Repeat All");
-                repeat = 1;
-                nowPlayingFragment.setRepeat(repeat);
-                nowPlayingFragment.getBtnRepeat().setBackgroundResource(R.drawable.ic_repeat_all);
-                musicService.setRepeat(repeat);
-                break;
-            case 1:
-                itemRepeat.setTitle("Repeat One");
-                showToastLengthShort(this, "Repeat One");
-                repeat = 2;
-                nowPlayingFragment.setRepeat(repeat);
-                nowPlayingFragment.getBtnRepeat().setBackgroundResource(R.drawable.ic_repeat_one);
-                musicService.setRepeat(repeat);
-                break;
-            case 2:
-                itemRepeat.setTitle("Don't Repeat");
-                showToastLengthShort(this, "Don't Repeat");
-                repeat = 0;
-                nowPlayingFragment.setRepeat(repeat);
-                nowPlayingFragment.getBtnRepeat().setBackgroundResource(R.drawable.ic_not_repeat);
-                musicService.setRepeat(repeat);
-                break;
-        }
-    }
-
     public void setMiniFragment(int position) {
         miniPlayerFragment.setTxtSongTitle(musicService.getSongs().get(position).getTitle());
         miniPlayerFragment.setTxtSongArtist(musicService.getSongs().get(position).getArtist());
@@ -328,13 +366,71 @@ public class MainActivity extends AppCompatActivity
 //        nowPlayingTransaction.replace(R.id.fragment_playing, nowPlayingFragment);
     }
 
+    public void setShuffleClicked() {
+        nowPlayingFragment = (NowPlayingFragment) getFragmentManager().findFragmentById(R.id.fragment_playing);
+
+        if (isShuffle) {
+            itemShuffle.setTitle("Don't Shuffle");
+            itemShuffle.setIcon(R.drawable.ic_item_not_shuffle);
+            showToasFunctions.showToastLengthShort(this, "Don't Shuffle");
+            isShuffle = false;
+            nowPlayingFragment.setShuffle(isShuffle);
+            nowPlayingFragment.getBtnShuffle().setBackgroundResource(R.drawable.ic_not_shuffle);
+            musicService.setShuffle(isShuffle);
+        } else {
+            itemShuffle.setTitle("Shuffle");
+            itemShuffle.setIcon(R.drawable.ic_shuffle);
+            showToasFunctions.showToastLengthShort(this, "Shuffle");
+            isShuffle = true;
+            nowPlayingFragment.setShuffle(isShuffle);
+            nowPlayingFragment.getBtnShuffle().setBackgroundResource(R.drawable.ic_shuffle);
+            musicService.setShuffle(isShuffle);
+        }
+    }
+
+    public void setRepeatClicked() {
+        switch (repeat) {
+            case 0:
+                itemRepeat.setTitle("Repeat All");
+                itemRepeat.setIcon(R.drawable.ic_repeat_all);
+                showToasFunctions.showToastLengthShort(this, "Repeat All");
+                repeat = 1;
+                nowPlayingFragment.setRepeat(repeat);
+                nowPlayingFragment.getBtnRepeat().setBackgroundResource(R.drawable.ic_repeat_all);
+                musicService.setRepeat(repeat);
+                break;
+            case 1:
+                itemRepeat.setTitle("Repeat One");
+                itemRepeat.setIcon(R.drawable.ic_repeat_one);
+                showToasFunctions.showToastLengthShort(this, "Repeat One");
+                repeat = 2;
+                nowPlayingFragment.setRepeat(repeat);
+                nowPlayingFragment.getBtnRepeat().setBackgroundResource(R.drawable.ic_repeat_one);
+                musicService.setRepeat(repeat);
+                break;
+            case 2:
+                itemRepeat.setTitle("Don't Repeat");
+                itemRepeat.setIcon(R.drawable.ic_item_not_repeat);
+                showToasFunctions.showToastLengthShort(this, "Don't Repeat");
+                repeat = 0;
+                nowPlayingFragment.setRepeat(repeat);
+                nowPlayingFragment.getBtnRepeat().setBackgroundResource(R.drawable.ic_not_repeat);
+                musicService.setRepeat(repeat);
+                break;
+        }
+    }
+
+    private void setProgressBar(int currentProgress) {
+        miniPlayerFragment.getProgressBarSong().setProgress(currentProgress);
+    }
+
     private void setRunnableProgressBar() {
         setDurationProgressBar();
         handler = new Handler();
         runnable = new Runnable() {
             @Override
             public void run() {
-                if (!isShowPlaylist)
+                if (isShowMain)
                     if (musicService.isPlaying())
                         setProgressBar(musicService.getCurrentPosition());
                 handler.postDelayed(this, 1000);
@@ -345,16 +441,10 @@ public class MainActivity extends AppCompatActivity
     }
 
     private void setDurationProgressBar() {
-        miniPlayerFragment = (MiniPlayerFragment) getFragmentManager().findFragmentById(R.id.fragment_bottom);
-
         miniPlayerFragment.getProgressBarSong().setMax(musicService.getDuration());
         int i = miniPlayerFragment.getProgressBarSong().getMax();
 //        Log.e("progressbar max", String.valueOf(i));
         setProgressBar(0);
-    }
-
-    private void setProgressBar(int currentProgress) {
-        miniPlayerFragment.getProgressBarSong().setProgress(currentProgress);
     }
 
     private void setRunnableSeekBar() {
@@ -363,7 +453,7 @@ public class MainActivity extends AppCompatActivity
         runnable = new Runnable() {
             @Override
             public void run() {
-                if (!isShowPlaylist)
+                if (isShowMain)
                     if (musicService.isPlaying()) {
                         int i = musicService.getCurrentPosition();
 //                        Log.e("current position", String.valueOf(i));
@@ -381,8 +471,6 @@ public class MainActivity extends AppCompatActivity
     }
 
     private void setDurationSeekBar() {
-        nowPlayingFragment = (NowPlayingFragment) getFragmentManager().findFragmentById(R.id.fragment_playing);
-
         nowPlayingFragment.getSeekBar().setMax(musicService.getDuration());
         int i = nowPlayingFragment.getSeekBar().getMax();
 //        Log.e("seekbar max", String.valueOf(i));
@@ -396,30 +484,6 @@ public class MainActivity extends AppCompatActivity
 
     public void setOnSeekBarChange(int progress) {
         musicService.seek(progress);
-    }
-
-    public void sortByTitle(ArrayList<Song> listSong) {
-        Collections.sort(listSong, new Comparator<Song>() {
-            public int compare(Song a, Song b) {
-                return a.getTitle().compareTo(b.getTitle());
-            }
-        });
-    }
-
-    public void sortByArtist(ArrayList<Song> listSong) {
-        Collections.sort(listSong, new Comparator<Song>() {
-            public int compare(Song a, Song b) {
-                return a.getArtist().compareTo(b.getArtist());
-            }
-        });
-    }
-
-    private void declare() {
-    }
-
-    private void declareItemInActionBar(Menu menu) {
-        itemShuffle = menu.findItem(R.id.item_shuffle);
-        itemRepeat = menu.findItem(R.id.item_repeat);
     }
 
     private void init() {
@@ -443,7 +507,13 @@ public class MainActivity extends AppCompatActivity
         isShuffle = false;
         repeat = 0;
 
-        isShowPlaylist = false;
+        isShowHome = false;
+        isShowMain = true;
+
+        simpleDateFormat = new SimpleDateFormat("mm:ss");
+
+        sortFunctions = new SortFunctions();
+        showToasFunctions = new ShowToasFunctions();
     }
 
     private void initFragment() {
@@ -455,87 +525,6 @@ public class MainActivity extends AppCompatActivity
 
         nowPlayingTransaction.add(R.id.fragment_playing, nowPlayingFragment);
         nowPlayingTransaction.commit();
-    }
-
-    @Override
-    public boolean onCreateOptionsMenu(Menu menu) {
-        getMenuInflater().inflate(R.menu.menu_main, menu);
-        getSupportActionBar().setTitle("All songs");
-        declareItemInActionBar(menu);
-        return super.onCreateOptionsMenu(menu);
-    }
-
-    @Override
-    public boolean onOptionsItemSelected(MenuItem item) {
-        ArrayList<Song> songList;
-        switch (item.getItemId()) {
-            case R.id.item_playlist:
-                stop();
-                Intent intent = new Intent(MainActivity.this, PlaylistActivity.class);
-                startActivity(intent);
-                listSongFragment.hide(listSongFragment.getView());
-                miniPlayerFragment.hide(miniPlayerFragment.getView());
-                return true;
-            case R.id.item_sort_title:
-                songList = listSongFragment.getSongs();
-                sortByTitle(songList);
-                listSongFragment.setListSongAdapter(new SongAdapter(this, songList));
-                listSongFragment.setListViewMusic();
-                return true;
-            case R.id.item_sort_artist:
-                songList = listSongFragment.getSongs();
-                sortByArtist(songList);
-                listSongFragment.setListSongAdapter(new SongAdapter(this, songList));
-                listSongFragment.setListViewMusic();
-                return true;
-            case R.id.item_shuffle:
-                if (isShuffle) {
-                    itemShuffle.setTitle("Don't Shuffle");
-                    itemShuffle.setIcon(R.drawable.ic_item_not_shuffle);
-                    showToastLengthShort(this, "Don't Shuffle");
-                    isShuffle = false;
-                    musicService.setShuffle(isShuffle);
-                } else {
-                    itemShuffle.setTitle("Shuffle");
-                    itemShuffle.setIcon(R.drawable.ic_shuffle);
-                    showToastLengthShort(this, "Shuffle");
-                    isShuffle = true;
-                    musicService.setShuffle(isShuffle);
-                }
-                return true;
-            case R.id.item_repeat:
-                switch (repeat) {
-                    case 0:
-                        itemRepeat.setTitle("Repeat All");
-                        itemRepeat.setIcon(R.drawable.ic_repeat_all);
-                        showToastLengthShort(this, "Repeat All");
-                        repeat = 1;
-                        musicService.setRepeat(repeat);
-                        break;
-                    case 1:
-                        itemRepeat.setTitle("Repeat One");
-                        itemRepeat.setIcon(R.drawable.ic_repeat_one);
-                        showToastLengthShort(this, "Repeat One");
-                        repeat = 2;
-                        musicService.setRepeat(repeat);
-                        break;
-                    case 2:
-                        itemRepeat.setTitle("Don't Repeat");
-                        itemRepeat.setIcon(R.drawable.ic_item_not_repeat);
-                        showToastLengthShort(this, "Don't Repeat");
-                        repeat = 0;
-                        musicService.setRepeat(repeat);
-                        break;
-                }
-                return true;
-        }
-
-        return super.onOptionsItemSelected(item);
-    }
-
-    public void showToastLengthShort(Context context, String text) {
-        Toast toast = Toast.makeText(context, text, Toast.LENGTH_SHORT);
-        toast.show();
     }
 
     public void play(int position) {
@@ -569,19 +558,23 @@ public class MainActivity extends AppCompatActivity
 
     public void stop() {
         if (musicService.isPlaying()) {
-            handler.removeCallbacks(runnable);
+//            handler.removeCallbacks(runnable);
             musicService.pause();
-            isShowPlaylist = true;
+
+            isShowMain = false;
         }
     }
 
     @Override
     public void onCompletion() {
-        setDurationProgressBar();
-        setMiniFragment(musicService.getPosition());
+        if (!isShowHome)
+            if (isShowMain) {
+                setDurationProgressBar();
+                setMiniFragment(musicService.getPosition());
 
-        setDurationSeekBar();
-        setPlayingFragment();
+                setDurationSeekBar();
+                setPlayingFragment();
+            }
     }
 
     @Override
@@ -691,8 +684,9 @@ public class MainActivity extends AppCompatActivity
                 if (grantResults[i] != PackageManager.PERMISSION_GRANTED)
                     isDenied = true;
             if (!isDenied) {
+                init();
                 initFragment();
-                listSongFragment.setListSongAdapter(getSongAdapter());
+                listSongFragment.setListSongAdapter(getSongAdapter(getSongsInExternalStorage()));
                 createService();
 
             } else {
@@ -704,4 +698,5 @@ public class MainActivity extends AppCompatActivity
             super.onRequestPermissionsResult(requestCode, permissions, grantResults);
         }
     }
+
 }

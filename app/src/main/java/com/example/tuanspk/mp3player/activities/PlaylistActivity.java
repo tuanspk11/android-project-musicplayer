@@ -17,7 +17,6 @@ import android.support.annotation.Nullable;
 import android.support.v7.app.AppCompatActivity;
 import android.text.Editable;
 import android.text.TextWatcher;
-import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
@@ -25,7 +24,6 @@ import android.widget.Button;
 import android.widget.EditText;
 import android.widget.ListView;
 import android.widget.MediaController;
-import android.widget.Toast;
 
 import com.example.tuanspk.mp3player.R;
 import com.example.tuanspk.mp3player.adapters.PlaylistAdapter;
@@ -43,12 +41,12 @@ import com.example.tuanspk.mp3player.utils.IOInternalStorage;
 import com.example.tuanspk.mp3player.models.Playlist;
 import com.example.tuanspk.mp3player.models.Song;
 import com.example.tuanspk.mp3player.services.MusicService;
+import com.example.tuanspk.mp3player.utils.ShowToasFunctions;
+import com.example.tuanspk.mp3player.utils.SortFunctions;
 
 import java.io.File;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Comparator;
 import java.util.Date;
 
 public class PlaylistActivity extends AppCompatActivity
@@ -80,7 +78,7 @@ public class PlaylistActivity extends AppCompatActivity
     private boolean isShuffle;
     private int repeat;
 
-    private IOInternalStorage IOData = new IOInternalStorage();
+    private IOInternalStorage IOData;
     private String fileName;
     private String filePath;
 
@@ -94,7 +92,10 @@ public class PlaylistActivity extends AppCompatActivity
 
     private boolean isShowPlaylist;
 
-    private SimpleDateFormat simpleDateFormat = new SimpleDateFormat("mm:ss");
+    private SimpleDateFormat simpleDateFormat;
+
+    private SortFunctions sortFunctions;
+    private ShowToasFunctions showToasFunctions;
 
     private ServiceConnection serviceConnection = new ServiceConnection() {
         @Override
@@ -123,7 +124,8 @@ public class PlaylistActivity extends AppCompatActivity
 
         init();
         initFragment();
-        playlistFragment.setPlaylistAdapter(getApplicationContext(), getPlaylistAdapter(getListPlaylist()));
+        playlistFragment.setPlaylistAdapter(getApplicationContext(), getPlaylistAdapter(
+                getListPlaylist(getFileInInternalStorage(filePath, fileName))));
 
         IOData.readInternal(this.getApplicationContext(), filePath, fileName);
 
@@ -136,6 +138,26 @@ public class PlaylistActivity extends AppCompatActivity
 
         getSupportActionBar().setDisplayHomeAsUpEnabled(false);
         createService();
+    }
+
+    @Override
+    public void onBackPressed() {
+        if (isPlayingFragmentShow) {
+            getSupportActionBar().show();
+            nowPlayingFragment.hide(nowPlayingFragment.getView());
+            isPlayingFragmentShow = false;
+        } else if (isListSongFragmentShow) {
+            playlistFragment.show(playlistFragment.getView());
+            listSongFragment.hide(listSongFragment.getView());
+            getSupportActionBar().setTitle("Playlist");
+            itemAddPlaylistOrSongs.setIcon(R.drawable.ic_item_playlist_add);
+            isListSongFragmentShow = false;
+        } else {
+            super.onBackPressed();
+
+            stop();
+            unbindService(serviceConnection);
+        }
     }
 
     @Override
@@ -158,13 +180,13 @@ public class PlaylistActivity extends AppCompatActivity
                 return true;
             case R.id.item_sort_title:
                 songList = listSongFragment.getSongs();
-                sortByTitle(songList);
+                sortFunctions.sortByTitle(songList);
                 listSongFragment.setListSongAdapter(new SongInPlaylistAdapter(this, songList));
                 listSongFragment.setListViewMusic();
                 return true;
             case R.id.item_sort_artist:
                 songList = listSongFragment.getSongs();
-                sortByArtist(songList);
+                sortFunctions.sortByArtist(songList);
                 listSongFragment.setListSongAdapter(new SongInPlaylistAdapter(this, songList));
                 listSongFragment.setListViewMusic();
                 return true;
@@ -175,17 +197,24 @@ public class PlaylistActivity extends AppCompatActivity
 
     public PlaylistAdapter getPlaylistAdapter(ArrayList<Playlist> listPlaylist) {
         ArrayList<Playlist> list = listPlaylist;
-        sortByName(list);
+//        sortByName(list);
 
         PlaylistAdapter adapter = new PlaylistAdapter(this, list);
         return adapter;
     }
 
-    public ArrayList<Playlist> getListPlaylist() {
+    public SongInPlaylistAdapter getSongInPlaylistAdapter(ArrayList<Song> listSong) {
+        ArrayList<Song> list = listSong;
+        sortFunctions.sortByTitle(list);
+
+        SongInPlaylistAdapter adapter = new SongInPlaylistAdapter(this, list);
+        return adapter;
+    }
+
+    public ArrayList<Playlist> getListPlaylist(String[] fileInInternalStorage) {
         ArrayList<Playlist> listPlaylist = new ArrayList<Playlist>();
 
-        String[] list = IOData.readFileInInternal(IOData.readInternal(this.getApplicationContext(),
-                filePath, fileName), filePath, fileName);
+        String[] list = fileInInternalStorage;
         if (list != null)
             for (int i = 0; i < list.length; i++) {
                 Playlist playlist = new Playlist(list[i]);
@@ -195,22 +224,12 @@ public class PlaylistActivity extends AppCompatActivity
         return listPlaylist;
     }
 
-    public SongInPlaylistAdapter getSongAdapter(ArrayList<Song> listSong) {
-        ArrayList<Song> list = listSong;
-        sortByTitle(list);
-
-        SongInPlaylistAdapter adapter = new SongInPlaylistAdapter(this, list);
-        return adapter;
-    }
-
-
     public ArrayList<Song> getSongsInPlaylist(String playlistName) {
         ArrayList<Song> list = new ArrayList<Song>();
 
-        String[] listSongId = IOData.readFileInInternal(IOData.readInternal(this.getApplicationContext(),
-                filePath, playlistName + ".txt"), filePath, playlistName + ".txt");
+        String[] listSongId = getFileInInternalStorage(filePath, playlistName);
         if (listSongId != null) {
-            ArrayList<Song> listSongs = getSongsInExternal();
+            ArrayList<Song> listSongs = getSongsInExternalStorage();
             for (int i = 0; i < listSongId.length; i++)
                 for (int j = 0; j < listSongs.size(); j++)
                     if (listSongId[i].toString().trim().equals(String.valueOf(listSongs.get(j).getId())))
@@ -220,7 +239,7 @@ public class PlaylistActivity extends AppCompatActivity
         return list;
     }
 
-    public ArrayList<Song> getSongsInExternal() {
+    public ArrayList<Song> getSongsInExternalStorage() {
 
         ArrayList<Song> songList = new ArrayList<Song>();
 
@@ -256,28 +275,149 @@ public class PlaylistActivity extends AppCompatActivity
         return songList;
     }
 
-    @Override
-    public void onBackPressed() {
-        if (isPlayingFragmentShow) {
-            getSupportActionBar().show();
-            nowPlayingFragment.hide(nowPlayingFragment.getView());
-            isPlayingFragmentShow = false;
-        } else if (isListSongFragmentShow) {
-            playlistFragment.show(playlistFragment.getView());
-            listSongFragment.hide(listSongFragment.getView());
-            getSupportActionBar().setTitle("Playlist");
-            itemAddPlaylistOrSongs.setIcon(R.drawable.ic_item_playlist_add);
-            isListSongFragmentShow = false;
-        } else {
-            super.onBackPressed();
+    public String[] getFileInInternalStorage(String filePath, String fileName) {
+        String[] list = IOData.readFileInInternal(
+                IOData.readInternal(getApplicationContext(), filePath, fileName));
+        if (list != null)
+            return list;
 
-            stop();
-            unbindService(serviceConnection);
-        }
+        return null;
+    }
+
+    public void showAddPlaylistDialog() {
+        final Dialog dialog = new Dialog(PlaylistActivity.this);
+        dialog.setContentView(R.layout.layout_add_playlist);
+        dialog.setCancelable(false);
+        final EditText editTextPlaylistName = dialog.findViewById(R.id.edittext_playlist_name);
+        final Button buttonOK = dialog.findViewById(R.id.button_ok);
+        Button buttonCancel = dialog.findViewById(R.id.button_cancel);
+
+        editTextPlaylistName.addTextChangedListener(new TextWatcher() {
+            @Override
+            public void beforeTextChanged(CharSequence s, int start, int count, int after) {
+
+            }
+
+            @Override
+            public void onTextChanged(CharSequence s, int start, int before, int count) {
+                if (s.toString().trim().length() != 0)
+                    buttonOK.setEnabled(true);
+                else buttonOK.setEnabled(false);
+            }
+
+            @Override
+            public void afterTextChanged(Editable s) {
+
+            }
+        });
+
+        buttonOK.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                String[] listPlaylistName = IOData.readFileInInternal(IOData.readInternal(
+                        getApplicationContext(), filePath, fileName));
+                if (listPlaylistName == null)
+                    listPlaylistName = new String[0];
+                String[] list = new String[listPlaylistName.length + 1];
+                boolean f = false;
+                for (int i = 0; i < listPlaylistName.length; i++) {
+                    list[i] = listPlaylistName[i];
+                    if (list[i].equals(editTextPlaylistName.getText().toString().trim()) ||
+                            editTextPlaylistName.getText().toString().trim().equals("playlist"))
+                        f = true;
+                }
+                if (f)
+                    showToasFunctions.showToastLengthShort(PlaylistActivity.this, "Tên Playlist bị trùng");
+                else {
+                    list[listPlaylistName.length] = editTextPlaylistName.getText().toString().trim();
+                    IOData.writeFileInInternal(IOData.readInternal(
+                            getApplicationContext(), filePath, fileName), list);
+                    IOData.readInternal(getApplicationContext(),
+                            filePath, editTextPlaylistName.getText().toString().trim()).delete();
+
+                    playlistFragment = (PlaylistFragment) getFragmentManager().findFragmentById(R.id.fragment_main);
+                    playlistFragment.setPlaylistAdapter(getApplicationContext(), getPlaylistAdapter(
+                            getListPlaylist(getFileInInternalStorage(filePath, fileName))));
+                    playlistFragment.setListViewPlaylist();
+
+                    dialog.cancel();
+                }
+            }
+        });
+
+        buttonCancel.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+//                Log.e("btn Cancel", "click");
+                dialog.cancel();
+            }
+        });
+
+        dialog.show();
+    }
+
+    public void showAddSongsDialog() {
+        final Dialog dialog = new Dialog(PlaylistActivity.this);
+        dialog.setContentView(R.layout.layout_add_songs_to_playlist);
+        dialog.setCancelable(false);
+
+        final ListView listView = dialog.findViewById(R.id.listview_list_all_songs);
+        ArrayList<Song> l1 = getSongsInPlaylist(plName);
+        ArrayList<Song> l2 = getSongsInExternalStorage();
+        for (int i = 0; i < l1.size(); i++)
+            for (int j = 0; j < l2.size(); j++)
+                if (String.valueOf(l2.get(j).getId()).equals(String.valueOf(l1.get(i).getId())))
+                    l2.remove(l2.get(j));
+        SongInAddSongToPlaylistAdapter adapter = new SongInAddSongToPlaylistAdapter(
+                PlaylistActivity.this, l2);
+        listView.setAdapter(adapter);
+        adapter.setSongInAddSongToPlaylistAdapterCallbacks(PlaylistActivity.this);
+
+        buttonOKInAddSongsToPlaylist = dialog.findViewById(R.id.button_ok);
+        buttonOKInAddSongsToPlaylist.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                File file = IOData.readInternal(getApplicationContext(),
+                        filePath, plName);
+                String[] listSongID = IOData.readFileInInternal(file);
+                String[] l = new String[listSIdLength];
+                for (int i = 0; i < listSIdLength; i++)
+                    l[i] = listSId[i];
+                if (listSongID != null) {
+                    String[] list = new String[listSongID.length + listSIdLength];
+                    for (int i = 0; i < listSongID.length + listSIdLength; i++)
+                        if (i < listSongID.length)
+                            list[i] = listSongID[i];
+                        else list[i] = listSId[i - listSongID.length];
+                    IOData.writeFileInInternal(file, list);
+                } else IOData.writeFileInInternal(file, l);
+
+                listSongFragment = (ListSongInPlaylistFragment)
+                        getFragmentManager().findFragmentById(R.id.fragment_songs_in_playlist);
+                setListSongFragment(getSongInPlaylistAdapter(getSongsInPlaylist(plName)));
+                musicService.setListSong(listSongFragment.getSongs());
+
+                listSIdLength = 0;
+                dialog.cancel();
+            }
+        });
+
+        Button buttonCancel = dialog.findViewById(R.id.button_cancel);
+        buttonCancel.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+//                Log.e("btn Cancel", "click");
+
+                listSIdLength = 0;
+                dialog.cancel();
+            }
+        });
+
+        dialog.show();
     }
 
     public void playlistPicked(String playlistName) {
-        setListSongFragment(getSongAdapter(getSongsInPlaylist(playlistName)));
+        setListSongFragment(getSongInPlaylistAdapter(getSongsInPlaylist(playlistName)));
         listSongFragment.show(listSongFragment.getView());
         listSongFragment = (ListSongInPlaylistFragment)
                 getFragmentManager().findFragmentById(R.id.fragment_songs_in_playlist);
@@ -286,7 +426,7 @@ public class PlaylistActivity extends AppCompatActivity
         playlistFragment = (PlaylistFragment) getFragmentManager().findFragmentById(R.id.fragment_main);
         playlistFragment.hide(playlistFragment.getView());
 
-        Log.e("songs in playlist", String.valueOf(isListSongFragmentShow));
+//        Log.e("songs in playlist", String.valueOf(isListSongFragmentShow));
         getSupportActionBar().setTitle(playlistName);
         itemAddPlaylistOrSongs.setIcon(R.drawable.ic_add_songs);
         isListSongFragmentShow = true;
@@ -330,180 +470,6 @@ public class PlaylistActivity extends AppCompatActivity
         isPlayingFragmentShow = true;
     }
 
-    public void setShuffleClicked() {
-        nowPlayingFragment = (NowPlayingInPlaylistFragment) getFragmentManager().findFragmentById(R.id.fragment_playing);
-
-        if (isShuffle) {
-            showToastLengthShort(this, "Don't Shuffle");
-            isShuffle = false;
-            nowPlayingFragment.setShuffle(isShuffle);
-            nowPlayingFragment.getBtnShuffle().setBackgroundResource(R.drawable.ic_not_shuffle);
-            musicService.setShuffle(isShuffle);
-        } else {
-            showToastLengthShort(this, "Shuffle");
-            isShuffle = true;
-            nowPlayingFragment.setShuffle(isShuffle);
-            nowPlayingFragment.getBtnShuffle().setBackgroundResource(R.drawable.ic_shuffle);
-            musicService.setShuffle(isShuffle);
-        }
-    }
-
-    public void setRepeatClicked() {
-        switch (repeat) {
-            case 0:
-                showToastLengthShort(this, "Repeat All");
-                repeat = 1;
-                nowPlayingFragment.setRepeat(repeat);
-                nowPlayingFragment.getBtnRepeat().setBackgroundResource(R.drawable.ic_repeat_all);
-                musicService.setRepeat(repeat);
-                break;
-            case 1:
-                showToastLengthShort(this, "Repeat One");
-                repeat = 2;
-                nowPlayingFragment.setRepeat(repeat);
-                nowPlayingFragment.getBtnRepeat().setBackgroundResource(R.drawable.ic_repeat_one);
-                musicService.setRepeat(repeat);
-                break;
-            case 2:
-                showToastLengthShort(this, "Don't Repeat");
-                repeat = 0;
-                nowPlayingFragment.setRepeat(repeat);
-                nowPlayingFragment.getBtnRepeat().setBackgroundResource(R.drawable.ic_not_repeat);
-                musicService.setRepeat(repeat);
-                break;
-        }
-    }
-
-    public void showAddPlaylistDialog() {
-        final Dialog dialog = new Dialog(PlaylistActivity.this);
-        dialog.setContentView(R.layout.layout_add_playlist);
-        dialog.setCancelable(false);
-        final EditText editTextPlaylistName = dialog.findViewById(R.id.edittext_playlist_name);
-        final Button buttonOK = dialog.findViewById(R.id.button_ok);
-        Button buttonCancel = dialog.findViewById(R.id.button_cancel);
-
-        editTextPlaylistName.addTextChangedListener(new TextWatcher() {
-            @Override
-            public void beforeTextChanged(CharSequence s, int start, int count, int after) {
-
-            }
-
-            @Override
-            public void onTextChanged(CharSequence s, int start, int before, int count) {
-                if (s.toString().trim().length() != 0)
-                    buttonOK.setEnabled(true);
-                else buttonOK.setEnabled(false);
-            }
-
-            @Override
-            public void afterTextChanged(Editable s) {
-
-            }
-        });
-
-        buttonOK.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                String[] listPlaylistName = IOData.readFileInInternal(IOData.readInternal(
-                        getApplicationContext(), filePath, fileName), filePath, fileName);
-                if (listPlaylistName == null)
-                    listPlaylistName = new String[0];
-                String[] list = new String[listPlaylistName.length + 1];
-                boolean f = false;
-                for (int i = 0; i < listPlaylistName.length; i++) {
-                    list[i] = listPlaylistName[i];
-                    if (list[i].equals(editTextPlaylistName.getText().toString().trim()) ||
-                            editTextPlaylistName.getText().toString().trim().equals("playlist"))
-                        f = true;
-                }
-                if (f) showToastLengthLong(PlaylistActivity.this, "Tên Playlist bị trùng");
-                else {
-                    list[listPlaylistName.length] = editTextPlaylistName.getText().toString().trim();
-                    IOData.writeFileInInternal(IOData.readInternal(
-                            getApplicationContext(), filePath, fileName), list);
-                    IOData.readInternal(getApplicationContext(),
-                            filePath, editTextPlaylistName.getText().toString().trim() + ".txt").delete();
-
-                    playlistFragment = (PlaylistFragment) getFragmentManager().findFragmentById(R.id.fragment_main);
-                    playlistFragment.setPlaylistAdapter(getApplicationContext(), getPlaylistAdapter(getListPlaylist()));
-                    playlistFragment.setListViewPlaylist();
-
-                    dialog.cancel();
-                }
-            }
-        });
-
-        buttonCancel.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                Log.e("btn Cancel", "click");
-                dialog.cancel();
-            }
-        });
-
-        dialog.show();
-    }
-
-    public void showAddSongsDialog() {
-        final Dialog dialog = new Dialog(PlaylistActivity.this);
-        dialog.setContentView(R.layout.layout_add_songs_to_playlist);
-        dialog.setCancelable(false);
-
-        final ListView listView = dialog.findViewById(R.id.listview_list_all_songs);
-        ArrayList<Song> l1 = getSongsInPlaylist(plName);
-        ArrayList<Song> l2 = getSongsInExternal();
-        for (int i = 0; i < l1.size(); i++)
-            for (int j = 0; j < l2.size(); j++)
-                if (String.valueOf(l2.get(j).getId()).equals(String.valueOf(l1.get(i).getId())))
-                    l2.remove(l2.get(j));
-        SongInAddSongToPlaylistAdapter adapter = new SongInAddSongToPlaylistAdapter(
-                PlaylistActivity.this, l2);
-        listView.setAdapter(adapter);
-        adapter.setSongInAddSongToPlaylistAdapterCallbacks(PlaylistActivity.this);
-
-        buttonOKInAddSongsToPlaylist = dialog.findViewById(R.id.button_ok);
-        buttonOKInAddSongsToPlaylist.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                File file = IOData.readInternal(getApplicationContext(),
-                        filePath, plName + ".txt");
-                String[] listSongID = IOData.readFileInInternal(file, filePath, plName + ".txt");
-                String[] l = new String[listSIdLength];
-                for (int i = 0; i < listSIdLength; i++)
-                    l[i] = listSId[i];
-                if (listSongID != null) {
-                    String[] list = new String[listSongID.length + listSIdLength];
-                    for (int i = 0; i < listSongID.length + listSIdLength; i++)
-                        if (i < listSongID.length)
-                            list[i] = listSongID[i];
-                        else list[i] = listSId[i - listSongID.length];
-                    IOData.writeFileInInternal(file, list);
-                } else IOData.writeFileInInternal(file, l);
-
-                listSongFragment = (ListSongInPlaylistFragment)
-                        getFragmentManager().findFragmentById(R.id.fragment_songs_in_playlist);
-                setListSongFragment(getSongAdapter(getSongsInPlaylist(plName)));
-                musicService.setListSong(listSongFragment.getSongs());
-
-                listSIdLength = 0;
-                dialog.cancel();
-            }
-        });
-
-        Button buttonCancel = dialog.findViewById(R.id.button_cancel);
-        buttonCancel.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                Log.e("btn Cancel", "click");
-
-                listSIdLength = 0;
-                dialog.cancel();
-            }
-        });
-
-        dialog.show();
-    }
-
     public void setListSongFragment(SongInPlaylistAdapter adapter) {
         listSongFragment.setListSongAdapter(adapter);
         listSongFragment.setListViewMusic();
@@ -522,6 +488,54 @@ public class PlaylistActivity extends AppCompatActivity
         nowPlayingFragment.setCircleBarVisualizer(musicService.getMediaPlayer().getAudioSessionId());
     }
 
+    public void setShuffleClicked() {
+        nowPlayingFragment = (NowPlayingInPlaylistFragment) getFragmentManager().findFragmentById(R.id.fragment_playing);
+
+        if (isShuffle) {
+            showToasFunctions.showToastLengthShort(this, "Don't Shuffle");
+            isShuffle = false;
+            nowPlayingFragment.setShuffle(isShuffle);
+            nowPlayingFragment.getBtnShuffle().setBackgroundResource(R.drawable.ic_not_shuffle);
+            musicService.setShuffle(isShuffle);
+        } else {
+            showToasFunctions.showToastLengthShort(this, "Shuffle");
+            isShuffle = true;
+            nowPlayingFragment.setShuffle(isShuffle);
+            nowPlayingFragment.getBtnShuffle().setBackgroundResource(R.drawable.ic_shuffle);
+            musicService.setShuffle(isShuffle);
+        }
+    }
+
+    public void setRepeatClicked() {
+        switch (repeat) {
+            case 0:
+                showToasFunctions.showToastLengthShort(this, "Repeat All");
+                repeat = 1;
+                nowPlayingFragment.setRepeat(repeat);
+                nowPlayingFragment.getBtnRepeat().setBackgroundResource(R.drawable.ic_repeat_all);
+                musicService.setRepeat(repeat);
+                break;
+            case 1:
+                showToasFunctions.showToastLengthShort(this, "Repeat One");
+                repeat = 2;
+                nowPlayingFragment.setRepeat(repeat);
+                nowPlayingFragment.getBtnRepeat().setBackgroundResource(R.drawable.ic_repeat_one);
+                musicService.setRepeat(repeat);
+                break;
+            case 2:
+                showToasFunctions.showToastLengthShort(this, "Don't Repeat");
+                repeat = 0;
+                nowPlayingFragment.setRepeat(repeat);
+                nowPlayingFragment.getBtnRepeat().setBackgroundResource(R.drawable.ic_not_repeat);
+                musicService.setRepeat(repeat);
+                break;
+        }
+    }
+
+    private void setProgressBar(int currentProgress) {
+        miniPlayerFragment.getProgressBarSong().setProgress(currentProgress);
+    }
+
     private void setRunableProgressBar() {
         setDurationProgressBar();
         handler = new Handler();
@@ -531,10 +545,10 @@ public class PlaylistActivity extends AppCompatActivity
                 if (isShowPlaylist)
                     if (musicService.isPlaying()) {
                         int i = musicService.getCurrentPosition();
-                        Log.e("current position", String.valueOf(i));
-                        Log.e("max progressbar", String.valueOf(miniPlayerFragment.getProgressBarSong().getMax()));
-                        Log.e("duration", String.valueOf(musicService.getDuration()));
-                        Log.e("position", String.valueOf(musicService.getPosition()));
+//                        Log.e("current position", String.valueOf(i));
+//                        Log.e("max progressbar", String.valueOf(miniPlayerFragment.getProgressBarSong().getMax()));
+//                        Log.e("duration", String.valueOf(musicService.getDuration()));
+//                        Log.e("position", String.valueOf(musicService.getPosition()));
                         setProgressBar(musicService.getCurrentPosition());
                     }
                 handler.postDelayed(this, 1000);
@@ -545,16 +559,15 @@ public class PlaylistActivity extends AppCompatActivity
     }
 
     private void setDurationProgressBar() {
-        miniPlayerFragment = (MiniPlayerInPlaylistFragment) getFragmentManager().findFragmentById(R.id.fragment_bottom);
-
         miniPlayerFragment.getProgressBarSong().setMax(musicService.getDuration());
         int i = miniPlayerFragment.getProgressBarSong().getMax();
-        Log.e("progressbar max", String.valueOf(i));
+//        Log.e("progressbar max", String.valueOf(i));
         setProgressBar(0);
     }
 
-    private void setProgressBar(int currentProgress) {
-        miniPlayerFragment.getProgressBarSong().setProgress(currentProgress);
+    private void setSeekBar(int currentProgress) {
+        nowPlayingFragment.getSeekBar().setProgress(currentProgress);
+        nowPlayingFragment.setTxtSongElapedTime(simpleDateFormat.format(new Date(currentProgress)));
     }
 
     private void setRunableSeekBar() {
@@ -566,10 +579,10 @@ public class PlaylistActivity extends AppCompatActivity
                 if (isShowPlaylist)
                     if (musicService.isPlaying()) {
                         int i = musicService.getCurrentPosition();
-                        Log.e("current position", String.valueOf(i));
-                        Log.e("max progressbar", String.valueOf(nowPlayingFragment.getSeekBar().getMax()));
-                        Log.e("duration", String.valueOf(musicService.getDuration()));
-                        Log.e("position", String.valueOf(musicService.getPosition()));
+//                        Log.e("current position", String.valueOf(i));
+//                        Log.e("max progressbar", String.valueOf(nowPlayingFragment.getSeekBar().getMax()));
+//                        Log.e("duration", String.valueOf(musicService.getDuration()));
+//                        Log.e("position", String.valueOf(musicService.getPosition()));
                         setSeekBar(musicService.getCurrentPosition());
                     }
                 handler.postDelayed(this, 1000);
@@ -580,48 +593,14 @@ public class PlaylistActivity extends AppCompatActivity
     }
 
     private void setDurationSeekBar() {
-        nowPlayingFragment = (NowPlayingInPlaylistFragment) getFragmentManager().findFragmentById(R.id.fragment_playing);
-
         nowPlayingFragment.getSeekBar().setMax(musicService.getDuration());
         int i = nowPlayingFragment.getSeekBar().getMax();
-        Log.e("seekbar max", String.valueOf(i));
+//        Log.e("seekbar max", String.valueOf(i));
         setSeekBar(0);
-    }
-
-    private void setSeekBar(int currentProgress) {
-        nowPlayingFragment.getSeekBar().setProgress(currentProgress);
-        nowPlayingFragment.setTxtSongElapedTime(simpleDateFormat.format(new Date(currentProgress)));
     }
 
     public void setOnSeekBarChange(int progress) {
         musicService.seek(progress);
-    }
-
-    public void sortByName(ArrayList<Playlist> listPlaylist) {
-        Collections.sort(listPlaylist, new Comparator<Playlist>() {
-            public int compare(Playlist a, Playlist b) {
-                return a.getName().compareTo(b.getName());
-            }
-        });
-    }
-
-    public void sortByTitle(ArrayList<Song> listSong) {
-        Collections.sort(listSong, new Comparator<Song>() {
-            public int compare(Song a, Song b) {
-                return a.getTitle().compareTo(b.getTitle());
-            }
-        });
-    }
-
-    public void sortByArtist(ArrayList<Song> listSong) {
-        Collections.sort(listSong, new Comparator<Song>() {
-            public int compare(Song a, Song b) {
-                return a.getArtist().compareTo(b.getArtist());
-            }
-        });
-    }
-
-    private void declare() {
     }
 
     private void init() {
@@ -640,6 +619,7 @@ public class PlaylistActivity extends AppCompatActivity
         nowPlayingTransaction = fragmentManager.beginTransaction();
         nowPlayingFragment = new NowPlayingInPlaylistFragment();
 
+        IOData = new IOInternalStorage();
         filePath = "playlist";
         fileName = "playlist.txt";
 
@@ -651,11 +631,17 @@ public class PlaylistActivity extends AppCompatActivity
         isShuffle = false;
         repeat = 0;
 
-        listSId = new String[getSongsInExternal().size()];
+        listSId = new String[getSongsInExternalStorage().size()];
         plName = "";
         listSIdLength = 0;
 
         isShowPlaylist = true;
+
+        simpleDateFormat = new SimpleDateFormat("mm:ss");
+
+        sortFunctions = new SortFunctions();
+        showToasFunctions = new ShowToasFunctions();
+
     }
 
     private void initFragment() {
@@ -670,16 +656,6 @@ public class PlaylistActivity extends AppCompatActivity
 
         nowPlayingTransaction.add(R.id.fragment_playing, nowPlayingFragment);
         nowPlayingTransaction.commit();
-    }
-
-    public void showToastLengthShort(Context context, String text) {
-        Toast toast = Toast.makeText(context, text, Toast.LENGTH_SHORT);
-        toast.show();
-    }
-
-    public void showToastLengthLong(Context context, String text) {
-        Toast toast = Toast.makeText(context, text, Toast.LENGTH_LONG);
-        toast.show();
     }
 
     public void play(int position) {
@@ -712,7 +688,7 @@ public class PlaylistActivity extends AppCompatActivity
 
     public void stop() {
         if (musicService.isPlaying()) {
-            handler.removeCallbacks(runnable);
+//            handler.removeCallbacks(runnable);
             musicService.pause();
             isShowPlaylist = false;
         }
@@ -720,11 +696,13 @@ public class PlaylistActivity extends AppCompatActivity
 
     @Override
     public void onCompletion() {
-        setDurationProgressBar();
-        setMiniFragment(musicService.getPosition());
+        if (isShowPlaylist) {
+            setDurationProgressBar();
+            setMiniFragment(musicService.getPosition());
 
-        setDurationSeekBar();
-        setPlayingFragment();
+            setDurationSeekBar();
+            setPlayingFragment();
+        }
     }
 
     @Override
@@ -800,14 +778,6 @@ public class PlaylistActivity extends AppCompatActivity
         return 0;
     }
 
-    private void createService() {
-        if (serviceIntent == null) {
-            serviceIntent = new Intent(this, MusicService.class);
-            bindService(serviceIntent, serviceConnection, Context.BIND_AUTO_CREATE);
-            startService(serviceIntent);
-        }
-    }
-
     @Override
     public void eventItemClick(ArrayList<Playlist> playlists) {
         String[] list = new String[playlists.size()];
@@ -817,7 +787,8 @@ public class PlaylistActivity extends AppCompatActivity
                 getApplicationContext(), filePath, fileName), list);
 
         playlistFragment = (PlaylistFragment) getFragmentManager().findFragmentById(R.id.fragment_main);
-        playlistFragment.setPlaylistAdapter(getApplicationContext(), getPlaylistAdapter(getListPlaylist()));
+        playlistFragment.setPlaylistAdapter(getApplicationContext(), getPlaylistAdapter(
+                getListPlaylist(getFileInInternalStorage(filePath, fileName))));
         playlistFragment.setListViewPlaylist();
     }
 
@@ -827,8 +798,8 @@ public class PlaylistActivity extends AppCompatActivity
             buttonOKInAddSongsToPlaylist.setEnabled(true);
         else buttonOKInAddSongsToPlaylist.setEnabled(false);
 //        showToastLengthLong(this, "checked");
-        Log.e("id", Id);
-        Log.e("isChecked", String.valueOf(isChecked));
+//        Log.e("id", Id);
+//        Log.e("isChecked", String.valueOf(isChecked));
 
         if (isChecked) {
             listSId[listSIdLength] = Id.toString().trim();
@@ -852,14 +823,15 @@ public class PlaylistActivity extends AppCompatActivity
     @Override
     public void removeSongInPlaylist(String songID) {
         if (musicService.isPlaying())
-            showToastLengthShort(this, "Music service is playing, please pause to music!!");
+            showToasFunctions.showToastLengthShort(
+                    this, "Music service is playing, please pause to music!!");
         else
             deleteSong(songID);
     }
 
     private void deleteSong(String songID) {
-        File file = IOData.readInternal(getApplicationContext(), filePath, plName + ".txt");
-        String[] listSongID = IOData.readFileInInternal(file, filePath, plName + ".txt");
+        File file = IOData.readInternal(getApplicationContext(), filePath, plName);
+        String[] listSongID = IOData.readFileInInternal(file);
         String[] list = new String[listSongID.length - 1];
         int i = 0;
         while (!listSongID[i].toString().trim().equals(songID.toString().trim())) {
@@ -871,8 +843,17 @@ public class PlaylistActivity extends AppCompatActivity
 
         IOData.writeFileInInternal(file, list);
 
-        setListSongFragment(getSongAdapter(getSongsInPlaylist(plName)));
+        setListSongFragment(getSongInPlaylistAdapter(getSongsInPlaylist(plName)));
         miniPlayerFragment.hide(miniPlayerFragment.getView());
-        musicService.setListSong(getSongsInPlaylist(plName));
+        musicService.setListSong(listSongFragment.getSongs());
     }
+
+    private void createService() {
+        if (serviceIntent == null) {
+            serviceIntent = new Intent(this, MusicService.class);
+            bindService(serviceIntent, serviceConnection, Context.BIND_AUTO_CREATE);
+            startService(serviceIntent);
+        }
+    }
+
 }
