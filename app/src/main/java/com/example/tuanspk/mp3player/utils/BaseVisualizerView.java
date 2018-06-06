@@ -24,8 +24,6 @@ import android.support.annotation.Nullable;
 import android.util.AttributeSet;
 import android.view.View;
 
-import com.example.tuanspk.mp3player.R;
-
 /**
  * Base class that contains common implementation for all
  * visualizers.
@@ -102,6 +100,10 @@ abstract public class BaseVisualizerView extends View {
 
     public Visualizer getVisualizer() {
         return visualizer;
+    }
+
+    public void release() {
+        visualizer.release();
     }
 
     protected abstract void init();

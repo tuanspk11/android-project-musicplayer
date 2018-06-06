@@ -1,16 +1,14 @@
 package com.example.tuanspk.mp3player.fragments;
 
 import android.app.Fragment;
-import android.content.CursorLoader;
-import android.database.Cursor;
-import android.net.Uri;
 import android.os.Bundle;
-import android.provider.MediaStore;
 import android.support.annotation.Nullable;
 import android.support.v4.content.ContextCompat;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.view.animation.Animation;
+import android.view.animation.AnimationUtils;
 import android.widget.ImageButton;
 import android.widget.ImageView;
 import android.widget.SeekBar;
@@ -22,10 +20,11 @@ import com.example.tuanspk.mp3player.visualizers.CircleBarVisualizer;
 
 public class NowPlayingFragment extends Fragment implements View.OnClickListener {
 
-    private long songID;
-    private String lyrics;
+//    private long songID;
+//    private String lyrics;
 
     private CircleBarVisualizer circleBarVisualizer;
+    private ImageView imgDisc;
 
     private TextView txtSongTitle;
     private TextView txtSongArtist;
@@ -41,6 +40,8 @@ public class NowPlayingFragment extends Fragment implements View.OnClickListener
     private boolean isPause;
     private boolean isShuffle;
     private int repeat;
+
+    private Animation animation;
 
     public void setTxtSongTitle(String txtSongTitle) {
         this.txtSongTitle.setText(txtSongTitle);
@@ -210,11 +211,9 @@ public class NowPlayingFragment extends Fragment implements View.OnClickListener
 //    }
 
     public void setCircleBarVisualizer(int audioSessionID) {
-        if (circleBarVisualizer.getVisualizer() == null) {
-            circleBarVisualizer.setColor(ContextCompat.getColor(
-                    ((MainActivity) getActivity()).getApplicationContext(), R.color.colorPink));
-            circleBarVisualizer.setPlayer(audioSessionID);
-        }
+        circleBarVisualizer.setColor(ContextCompat.getColor(
+                ((MainActivity) getActivity()).getApplicationContext(), R.color.colorPink));
+        circleBarVisualizer.setPlayer(audioSessionID);
     }
 
     public void show(View view) {
@@ -223,10 +222,12 @@ public class NowPlayingFragment extends Fragment implements View.OnClickListener
 
     public void hide(View view) {
         view.setVisibility(view.GONE);
+        circleBarVisualizer.release();
     }
 
     private void declare(View view) {
         circleBarVisualizer = view.findViewById(R.id.visualizer);
+        imgDisc = view.findViewById(R.id.imageview_disc);
 
         txtSongTitle = view.findViewById(R.id.textview_song_title);
         txtSongArtist = view.findViewById(R.id.textview_song_artist);
@@ -243,7 +244,11 @@ public class NowPlayingFragment extends Fragment implements View.OnClickListener
     private void init() {
         isPause = false;
         repeat = 0;
-        lyrics = null;
+//        lyrics = null;
+
+        animation = AnimationUtils.loadAnimation(
+                ((MainActivity) getActivity()).getApplicationContext(), R.anim.disc_rotate);
+        imgDisc.startAnimation(animation);
     }
 
 }

@@ -61,8 +61,9 @@ public class CircleBarVisualizer extends BaseVisualizerView {
     @Override
     protected void onDraw(Canvas canvas) {
         if (radius == -1) {
-            radius = getHeight() < getWidth() ? getHeight() : getWidth();
-            radius = (int) (radius * 0.65 / 2);
+//            radius = getHeight() < getWidth() ? getHeight() : getWidth();
+//            radius = (int) (radius * 0.65 / 2);
+            radius = 350;
             double circumference = 2 * Math.PI * radius;
             paint.setStrokeWidth((float) (circumference / 120));
             circlePaint.setStyle(Paint.Style.STROKE);

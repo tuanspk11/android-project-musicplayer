@@ -37,6 +37,13 @@
             <!--android:padding="16dp"-->
             <!--android:textSize="20sp" />-->
 
+            <ImageView
+                android:id="@+id/imageview_disc"
+                android:layout_width="700px"
+                android:layout_height="700px"
+                android:layout_gravity="center"
+                app:srcCompat="@drawable/img_disc" />
+
             <com.example.tuanspk.mp3player.visualizers.CircleBarVisualizer
                 android:id="@+id/visualizer"
                 android:layout_width="match_parent"

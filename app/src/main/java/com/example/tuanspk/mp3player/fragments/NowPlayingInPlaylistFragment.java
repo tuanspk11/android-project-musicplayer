@@ -3,18 +3,26 @@ package com.example.tuanspk.mp3player.fragments;
 import android.app.Fragment;
 import android.os.Bundle;
 import android.support.annotation.Nullable;
+import android.support.v4.content.ContextCompat;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.view.animation.Animation;
+import android.view.animation.AnimationUtils;
 import android.widget.ImageButton;
 import android.widget.ImageView;
 import android.widget.SeekBar;
 import android.widget.TextView;
 
 import com.example.tuanspk.mp3player.R;
+import com.example.tuanspk.mp3player.activities.MainActivity;
 import com.example.tuanspk.mp3player.activities.PlaylistActivity;
+import com.example.tuanspk.mp3player.visualizers.CircleBarVisualizer;
 
 public class NowPlayingInPlaylistFragment extends Fragment implements View.OnClickListener {
+
+    private CircleBarVisualizer circleBarVisualizer;
+    private ImageView imgDisc;
 
     private TextView txtSongTitle;
     private TextView txtSongArtist;
@@ -30,6 +38,8 @@ public class NowPlayingInPlaylistFragment extends Fragment implements View.OnCli
     private boolean isPause;
     private boolean isShuffle;
     private int repeat;
+
+    private Animation animation;
 
     public void setTxtSongTitle(String txtSongTitle) {
         this.txtSongTitle.setText(txtSongTitle);
@@ -140,15 +150,25 @@ public class NowPlayingInPlaylistFragment extends Fragment implements View.OnCli
         }
     }
 
+    public void setCircleBarVisualizer(int audioSessionID) {
+        circleBarVisualizer.setColor(ContextCompat.getColor(
+                ((PlaylistActivity) getActivity()).getApplicationContext(), R.color.colorPink));
+        circleBarVisualizer.setPlayer(audioSessionID);
+    }
+
     public void show(View view) {
         view.setVisibility(view.VISIBLE);
     }
 
     public void hide(View view) {
         view.setVisibility(view.GONE);
+        circleBarVisualizer.release();
     }
 
     private void declare(View view) {
+        circleBarVisualizer = view.findViewById(R.id.visualizer);
+        imgDisc = view.findViewById(R.id.imageview_disc);
+
         txtSongTitle = view.findViewById(R.id.textview_song_title);
         txtSongArtist = view.findViewById(R.id.textview_song_artist);
         seekBar = view.findViewById((R.id.seekbar_song_duration));
@@ -164,6 +184,10 @@ public class NowPlayingInPlaylistFragment extends Fragment implements View.OnCli
     private void init() {
         isPause = false;
         repeat = 0;
+
+        animation = AnimationUtils.loadAnimation(
+                ((PlaylistActivity) getActivity()).getApplicationContext(), R.anim.disc_rotate);
+        imgDisc.startAnimation(animation);
     }
 
 }

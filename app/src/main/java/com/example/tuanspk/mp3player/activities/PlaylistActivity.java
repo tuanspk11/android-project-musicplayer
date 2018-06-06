@@ -519,6 +519,7 @@ public class PlaylistActivity extends AppCompatActivity
         nowPlayingFragment.setTxtSongTitle(musicService.getSongs().get(musicService.getPosition()).getTitle());
         nowPlayingFragment.setTxtSongArtist(musicService.getSongs().get(musicService.getPosition()).getArtist());
         nowPlayingFragment.setTxtSongDuration(simpleDateFormat.format(new Date((musicService.getDuration()))));
+        nowPlayingFragment.setCircleBarVisualizer(musicService.getMediaPlayer().getAudioSessionId());
     }
 
     private void setRunableProgressBar() {
