@@ -129,6 +129,16 @@ public class MainActivity extends AppCompatActivity
     }
 
     @Override
+    protected void onPause() {
+        super.onPause();
+
+        nowPlayingFragment = (NowPlayingFragment) getFragmentManager().findFragmentById(R.id.fragment_playing);
+
+        isShowHome = true;
+        isShowMain = false;
+    }
+
+    @Override
     protected void onRestart() {
         super.onRestart();
 
@@ -139,18 +149,13 @@ public class MainActivity extends AppCompatActivity
         listSongFragment.show(listSongFragment.getView());
         musicService.setListSong(listSongFragment.getSongs());
 
+        setMiniFragment(musicService.getPosition());
+        setPlayingFragment(musicService.getPosition());
+//        miniPlayerFragment.getProgressBarSong().setMax(musicService.getDuration());
+//        nowPlayingFragment.getSeekBar().setMax(musicService.getDuration());
+
         musicService.setServiceCallbacks(MainActivity.this);
         musicBound = true;
-    }
-
-    @Override
-    protected void onPause() {
-        super.onPause();
-
-        nowPlayingFragment = (NowPlayingFragment) getFragmentManager().findFragmentById(R.id.fragment_playing);
-
-        isShowHome = true;
-        isShowMain = false;
     }
 
     @Override
@@ -308,7 +313,7 @@ public class MainActivity extends AppCompatActivity
 
     public void songPlaying() {
 
-        setPlayingFragment();
+        setPlayingFragment(musicService.getPosition());
         nowPlayingFragment.setPause(!musicService.isPlaying());
         nowPlayingFragment.setShuffle(isShuffle);
         if (isShuffle)
@@ -358,9 +363,9 @@ public class MainActivity extends AppCompatActivity
 //        miniPlayerTransaction.replace(R.id.fragment_bottom, miniPlayerFragment);
     }
 
-    public void setPlayingFragment() {
-        nowPlayingFragment.setTxtSongTitle(musicService.getSongs().get(musicService.getPosition()).getTitle());
-        nowPlayingFragment.setTxtSongArtist(musicService.getSongs().get(musicService.getPosition()).getArtist());
+    public void setPlayingFragment(int position) {
+        nowPlayingFragment.setTxtSongTitle(musicService.getSongs().get(position).getTitle());
+        nowPlayingFragment.setTxtSongArtist(musicService.getSongs().get(position).getArtist());
         nowPlayingFragment.setTxtSongDuration(simpleDateFormat.format(new Date((musicService.getDuration()))));
         nowPlayingFragment.setCircleBarVisualizer(musicService.getMediaPlayer().getAudioSessionId());
 //        nowPlayingTransaction.replace(R.id.fragment_playing, nowPlayingFragment);
@@ -442,7 +447,7 @@ public class MainActivity extends AppCompatActivity
 
     private void setDurationProgressBar() {
         miniPlayerFragment.getProgressBarSong().setMax(musicService.getDuration());
-        int i = miniPlayerFragment.getProgressBarSong().getMax();
+//        int i = miniPlayerFragment.getProgressBarSong().getMax();
 //        Log.e("progressbar max", String.valueOf(i));
         setProgressBar(0);
     }
@@ -455,7 +460,7 @@ public class MainActivity extends AppCompatActivity
             public void run() {
                 if (isShowMain)
                     if (musicService.isPlaying()) {
-                        int i = musicService.getCurrentPosition();
+//                        int i = musicService.getCurrentPosition();
 //                        Log.e("current position", String.valueOf(i));
 //                        Log.e("max progressbar", String.valueOf(nowPlayingFragment.getSeekBar().getMax()));
 //                        Log.e("duration", String.valueOf(musicService.getDuration()));
@@ -472,7 +477,7 @@ public class MainActivity extends AppCompatActivity
 
     private void setDurationSeekBar() {
         nowPlayingFragment.getSeekBar().setMax(musicService.getDuration());
-        int i = nowPlayingFragment.getSeekBar().getMax();
+//        int i = nowPlayingFragment.getSeekBar().getMax();
 //        Log.e("seekbar max", String.valueOf(i));
         setSeekBar(0);
     }
@@ -543,7 +548,7 @@ public class MainActivity extends AppCompatActivity
         setMiniFragment(musicService.getPosition());
 
         setDurationSeekBar();
-        setPlayingFragment();
+        setPlayingFragment(musicService.getPosition());
     }
 
     public void previous() {
@@ -553,7 +558,7 @@ public class MainActivity extends AppCompatActivity
         setMiniFragment(musicService.getPosition());
 
         setDurationSeekBar();
-        setPlayingFragment();
+        setPlayingFragment(musicService.getPosition());
     }
 
     public void stop() {
@@ -573,7 +578,7 @@ public class MainActivity extends AppCompatActivity
                 setMiniFragment(musicService.getPosition());
 
                 setDurationSeekBar();
-                setPlayingFragment();
+                setPlayingFragment(musicService.getPosition());
             }
     }
 

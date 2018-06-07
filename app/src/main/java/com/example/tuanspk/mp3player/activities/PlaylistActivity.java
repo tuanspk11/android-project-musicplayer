@@ -33,6 +33,7 @@ import com.example.tuanspk.mp3player.callbacks.IPlaylistAdapterCallbacks;
 import com.example.tuanspk.mp3player.callbacks.IServiceCallbacks;
 import com.example.tuanspk.mp3player.callbacks.ISongAdapterCallbacks;
 import com.example.tuanspk.mp3player.callbacks.ISongInAddSongToPlaylistAdapterCallbacks;
+import com.example.tuanspk.mp3player.fragments.ListSongFragment;
 import com.example.tuanspk.mp3player.fragments.ListSongInPlaylistFragment;
 import com.example.tuanspk.mp3player.fragments.MiniPlayerInPlaylistFragment;
 import com.example.tuanspk.mp3player.fragments.NowPlayingInPlaylistFragment;
@@ -138,6 +139,35 @@ public class PlaylistActivity extends AppCompatActivity
 
         getSupportActionBar().setDisplayHomeAsUpEnabled(false);
         createService();
+    }
+
+    @Override
+    protected void onPause() {
+        super.onPause();
+
+        nowPlayingFragment = (NowPlayingInPlaylistFragment) getFragmentManager().findFragmentById(R.id.fragment_playing);
+
+        isShowPlaylist = false;
+    }
+
+    @Override
+    protected void onRestart() {
+        super.onRestart();
+
+        isShowPlaylist = true;
+
+        listSongFragment = (ListSongInPlaylistFragment)
+                getFragmentManager().findFragmentById(R.id.fragment_songs_in_playlist);
+        listSongFragment.show(listSongFragment.getView());
+        musicService.setListSong(listSongFragment.getSongs());
+
+        setMiniFragment(musicService.getPosition());
+        setPlayingFragment();
+//        miniPlayerFragment.getProgressBarSong().setMax(musicService.getDuration());
+//        nowPlayingFragment.getSeekBar().setMax(musicService.getDuration());
+
+        musicService.setServiceCallbacks(PlaylistActivity.this);
+        musicBound = true;
     }
 
     @Override
